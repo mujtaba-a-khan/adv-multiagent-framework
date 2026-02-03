@@ -150,6 +150,7 @@ def _build_history_recorder() -> Any:
             vulnerability_category=state.get("vulnerability_category"),
             attack_technique=state.get("attack_technique"),
             target_blocked=state.get("target_blocked", False),
+            raw_target_response=state.get("raw_target_response"),
             attacker_tokens=budget.total_attacker_tokens,
             target_tokens=budget.total_target_tokens,
             analyzer_tokens=budget.total_analyzer_tokens,

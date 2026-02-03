@@ -155,6 +155,7 @@ class Turn(Base):
 
     # Target response
     target_response: Mapped[str] = mapped_column(Text, nullable=False)
+    raw_target_response: Mapped[str | None] = mapped_column(Text, nullable=True)
     target_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Analysis

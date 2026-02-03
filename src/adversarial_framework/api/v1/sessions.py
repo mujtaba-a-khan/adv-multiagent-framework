@@ -204,6 +204,7 @@ def _turn_to_ws_payload(turn: object, db_id: str, sid: str) -> dict:
         "strategy_params": turn.strategy_params,
         "attack_prompt": turn.attack_prompt,
         "target_response": turn.target_response,
+        "raw_target_response": getattr(turn, "raw_target_response", None),
         "target_blocked": turn.target_blocked,
         "judge_verdict": _verdict_value(turn),
         "judge_confidence": turn.confidence,
@@ -239,6 +240,7 @@ async def _persist_turn_and_metrics(
             strategy_params=turn.strategy_params,
             attack_prompt=turn.attack_prompt,
             target_response=turn.target_response,
+            raw_target_response=getattr(turn, "raw_target_response", None),
             target_blocked=turn.target_blocked,
             judge_verdict=verdict_val,
             judge_confidence=turn.confidence,
@@ -296,6 +298,7 @@ def _build_initial_state(experiment: object, sid: str) -> dict:
         "planning_notes": None,
         "current_attack_prompt": None,
         "target_response": None,
+        "raw_target_response": None,
         "target_blocked": False,
         "judge_verdict": None,
         "judge_confidence": None,
@@ -440,6 +443,7 @@ async def _on_target(
             "turn_number": metrics.total_turns + 1,
             "data": {
                 "target_response": response,
+                "raw_target_response": update.get("raw_target_response"),
                 "target_blocked": update.get("target_blocked", False),
             },
         })

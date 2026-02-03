@@ -77,6 +77,7 @@ class TurnResponse(BaseModel):
     strategy_params: dict
     attack_prompt: str
     target_response: str
+    raw_target_response: str | None
     target_blocked: bool
     judge_verdict: str
     judge_confidence: float

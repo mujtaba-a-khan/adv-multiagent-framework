@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowLeft,
   Bot,
+  ChevronDown,
   Radio,
   Shield,
   ShieldCheck,
@@ -23,6 +24,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExperiment } from "@/hooks/use-experiments";
@@ -118,7 +124,7 @@ export default function LiveBattlePage() {
       <Header title="Live Battle" />
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* ── Chat panel ──────────────────────────────────── */}
+        {/* Chat panel */}
         <div className="flex min-h-0 flex-1 flex-col border-r">
           {/* Toolbar */}
           <div className="flex shrink-0 items-center gap-3 border-b px-4 py-3">
@@ -234,7 +240,7 @@ export default function LiveBattlePage() {
           </div>
         </div>
 
-        {/* ── Metrics sidebar ─────────────────────────────── */}
+        {/* Metrics sidebar */}
         <div className="w-full shrink-0 overflow-y-auto border-t lg:w-80 lg:border-t-0">
           <div className="space-y-4 p-4">
             <Card>
@@ -343,7 +349,7 @@ export default function LiveBattlePage() {
   );
 }
 
-/* ── Bouncing dots animation ──────────────────────────────────────────────── */
+/* Bouncing dots animation  */
 
 function BouncingDots({ color = "bg-current" }: { color?: string }) {
   return (
@@ -361,7 +367,7 @@ function BouncingDots({ color = "bg-current" }: { color?: string }) {
   );
 }
 
-/* ── Message bubble used by both completed and pending turns ───────────── */
+/* Message bubble used by both completed and pending turns */
 
 function MessageBubble({
   role,
@@ -411,7 +417,7 @@ function MessageBubble({
   );
 }
 
-/* ── Completed turn ────────────────────────────────────────────────────── */
+/* Completed turn */
 
 function TurnMessage({ turn }: { turn: Turn }) {
   const isBaseline = turn.turn_number === 1;
@@ -461,31 +467,34 @@ function TurnMessage({ turn }: { turn: Turn }) {
         <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
           {turn.target_response}
         </p>
+        {turn.target_blocked && turn.raw_target_response && (
+          <RawResponseCollapsible rawResponse={turn.raw_target_response} />
+        )}
       </MessageBubble>
 
       {/* Score row */}
       {(turn.severity_score !== null ||
         turn.specificity_score !== null ||
         turn.coherence_score !== null) && (
-        <div className="ml-10 flex flex-wrap gap-3 text-xs text-muted-foreground">
-          {turn.severity_score !== null && (
-            <span>Severity: {turn.severity_score}/10</span>
-          )}
-          {turn.specificity_score !== null && (
-            <span>Specificity: {turn.specificity_score}/10</span>
-          )}
-          {turn.coherence_score !== null && (
-            <span>Coherence: {turn.coherence_score}/10</span>
-          )}
-        </div>
-      )}
+          <div className="ml-10 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            {turn.severity_score !== null && (
+              <span>Severity: {turn.severity_score}/10</span>
+            )}
+            {turn.specificity_score !== null && (
+              <span>Specificity: {turn.specificity_score}/10</span>
+            )}
+            {turn.coherence_score !== null && (
+              <span>Coherence: {turn.coherence_score}/10</span>
+            )}
+          </div>
+        )}
 
       <Separator className="my-1" />
     </div>
   );
 }
 
-/* ── Pending turn (built up progressively from WS events) ──────────────── */
+/* Pending turn (built up progressively from WS events) */
 
 function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
   const hasPrompt = !!pending.attack_prompt;
@@ -547,9 +556,14 @@ function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
       {(hasPrompt || previewText) && (
         <MessageBubble role="target" blocked={pending.target_blocked}>
           {hasResponse ? (
-            <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
-              {pending.target_response}
-            </p>
+            <>
+              <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
+                {pending.target_response}
+              </p>
+              {pending.target_blocked && pending.raw_target_response && (
+                <RawResponseCollapsible rawResponse={pending.raw_target_response} />
+              )}
+            </>
           ) : (
             <BouncingDots color="bg-blue-500/60" />
           )}
@@ -567,7 +581,39 @@ function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
   );
 }
 
-/* ── Small helpers ─────────────────────────────────────────────────────── */
+/* Raw response collapsible (for blocked turns) */
+
+function RawResponseCollapsible({ rawResponse }: { rawResponse: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-3">
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400"
+        >
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+          {open ? "Hide Original Response" : "View Original Response"}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 rounded-md border border-dashed border-amber-500/20 bg-amber-500/5 p-3">
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-amber-600/70 dark:text-amber-400/70">
+            Original LLM Output (Pre-Defense)
+          </p>
+          <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
+            {rawResponse}
+          </p>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/* Small helpers */
 
 function MetricRow({
   label,
