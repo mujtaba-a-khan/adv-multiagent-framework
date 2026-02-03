@@ -143,6 +143,11 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.vscode/
+.mcp-venv/
+.uv-venv/
+.venv-mcp/
+
 
 # Spyder project settings
 .spyderproject
@@ -195,9 +200,6 @@ cython_debug/
 .pypirc
 
 # Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
 
@@ -205,3 +207,26 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# NotebookLM
+.notebooklm-mcp
+
+# Claude
+.claude
+.claude.json
+
+#Agent
+.agents
+
+#UV
+.uv_cache
+.tmp
+
+#Frontend
+.next
+node_modules
+
+.DS_Store
+docs
+notebooks
+prompt_templates

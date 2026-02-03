@@ -1,0 +1,77 @@
+[project]
+name = "adversarial-framework"
+version = "0.1.0"
+description = "Adversarial Multi-Agent Framework for AI Safety — Red teaming LLMs with LangGraph"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    # LangGraph / LangChain Orchestration
+    "langgraph>=0.3",
+    "langchain-core>=0.3",
+    "langchain-ollama>=0.3",
+    "langchain-openai>=0.3",
+    "langchain-anthropic>=0.3",
+    # API Framework
+    "fastapi[standard]>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.6",
+    # Database (Neon Serverless PostgreSQL)
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pgvector>=0.3",
+    # LLM Clients
+    "httpx>=0.28",
+    "tiktoken>=0.8",
+    # Redis (rate limiting, pub/sub)
+    "redis>=5.2",
+    # Utilities
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "structlog>=24.4",
+    "python-dotenv>=1.0",
+    "cryptography>=44.0",
+    "click>=8.1",
+    "langgraph-checkpoint-postgres>=3.0.3",
+]
+
+[project.scripts]
+adversarial = "adversarial_framework.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adversarial_framework"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",
+    "mypy>=1.13",
+    "ruff>=0.8",
+    "pre-commit>=4.0",
+    "aiosqlite>=0.22.1",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

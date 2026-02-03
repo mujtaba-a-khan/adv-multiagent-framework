@@ -1,0 +1,50 @@
+# Production Docker Compose overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  backend:
+    environment:
+      - ADV_ENVIRONMENT=production
+      - ADV_LOG_JSON=true
+    volumes: []  # No source mounts in production
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  frontend:
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  redis:
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --appendonly yes
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: "1.0"
