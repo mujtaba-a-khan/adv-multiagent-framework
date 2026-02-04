@@ -85,7 +85,17 @@ async def create_session(
     if experiment is None:
         raise HTTPException(status_code=404, detail="Experiment not found")
 
-    session = await session_repo.create(experiment_id=experiment_id)
+    session_mode = body.session_mode if body else "attack"
+    initial_defenses = (
+        [d.model_dump() for d in body.initial_defenses]
+        if body and body.initial_defenses
+        else []
+    )
+    session = await session_repo.create(
+        experiment_id=experiment_id,
+        session_mode=session_mode,
+        initial_defenses=initial_defenses,
+    )
     return SessionResponse.model_validate(session)
 
 
@@ -152,6 +162,8 @@ async def start_session(
     # Snapshot experiment data BEFORE update_status() which calls
     # expire_all() and invalidates ORM objects in the identity map.
     experiment_snap = _ExperimentSnapshot.from_orm(experiment)
+    session_mode = session.session_mode
+    initial_defenses = session.initial_defenses or []
 
     await session_repo.update_status(session_id, "running")
 
@@ -163,6 +175,8 @@ async def start_session(
         experiment=experiment_snap,
         session_id=session_id,
         provider=provider,
+        session_mode=session_mode,
+        initial_defenses=initial_defenses,
     )
 
     # Re-fetch to get updated status
@@ -270,7 +284,12 @@ async def _persist_turn_and_metrics(
     return str(db_turn.id)
 
 
-def _build_initial_state(experiment: object, sid: str) -> dict:
+def _build_initial_state(
+    experiment: object,
+    sid: str,
+    session_mode: str = "attack",
+    initial_defenses: list[dict[str, Any]] | None = None,
+) -> dict:
     """Assemble the initial LangGraph state from an experiment record."""
     from adversarial_framework.core.constants import SessionStatus
     from adversarial_framework.core.state import TokenBudget
@@ -289,6 +308,11 @@ def _build_initial_state(experiment: object, sid: str) -> dict:
             "name": experiment.strategy_name,
             "params": experiment.strategy_params or {},
         },
+        # Defense configuration
+        "session_mode": session_mode,
+        "initial_defense_config": initial_defenses or [],
+        "defense_enabled": session_mode == "defense",
+        # Execution control
         "status": SessionStatus.PENDING,
         "current_turn": 0,
         "max_turns": experiment.max_turns,
@@ -329,6 +353,8 @@ async def _run_graph_session(
     experiment: object,
     session_id: uuid.UUID,
     provider: OllamaProvider,
+    session_mode: str = "attack",
+    initial_defenses: list[dict[str, Any]] | None = None,
 ) -> None:
     """Execute the LangGraph adversarial loop with real-time streaming.
 
@@ -351,9 +377,16 @@ async def _run_graph_session(
             target_system_prompt=experiment.target_system_prompt,
             max_turns=experiment.max_turns,
             max_cost_usd=experiment.max_cost_usd,
+            session_mode=session_mode,
+            initial_defenses=initial_defenses,
+            defense_model=experiment.defender_model,
         )
         compiled = graph.compile()
-        initial_state = _build_initial_state(experiment, sid)
+        initial_state = _build_initial_state(
+            experiment, sid,
+            session_mode=session_mode,
+            initial_defenses=initial_defenses,
+        )
         metrics = _SessionMetrics()
 
         async for event in compiled.astream(
@@ -497,6 +530,7 @@ async def _on_initialize(
         "turn_number": 1,
         "data": {
             "attack_objective": _update.get("attack_objective", ""),
+            "session_mode": _update.get("session_mode", "attack"),
         },
     })
 

@@ -91,8 +91,10 @@ class Session(Base):
         UUID(as_uuid=True), ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False
     )
 
-    # Status
+    # Status & mode
     status: Mapped[str] = mapped_column(String(32), default="pending")
+    session_mode: Mapped[str] = mapped_column(String(32), default="attack", nullable=False)
+    initial_defenses: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
     # Aggregated metrics
     total_turns: Mapped[int] = mapped_column(Integer, default=0)

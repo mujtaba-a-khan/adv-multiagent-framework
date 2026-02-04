@@ -1,23 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { formatDistanceToNow, format } from "date-fns";
 import {
   ArrowLeft,
-  Clock,
   DollarSign,
-  FlaskConical,
-  Loader2,
+  GitCompareArrows,
   Play,
   Radio,
   Shield,
   Swords,
   Target,
-  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
+import { LaunchSessionModal } from "@/components/launch-session-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +43,7 @@ import {
   useStartSession,
 } from "@/hooks/use-sessions";
 import { ROUTES, STATUS_COLORS, CATEGORY_LABELS } from "@/lib/constants";
-import type { Session } from "@/lib/types";
+import type { DefenseSelectionItem, Session, SessionMode } from "@/lib/types";
 
 export default function ExperimentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -57,23 +56,38 @@ export default function ExperimentDetailPage() {
   const startSession = useStartSession(params.id);
 
   const sessions = sessionsData?.sessions ?? [];
+  const [showLaunchModal, setShowLaunchModal] = useState(false);
 
-  const handleNewSession = () => {
-    createSession.mutate(undefined, {
-      onSuccess: (session) => {
-        toast.success("Session created");
-        startSession.mutate(session.id, {
-          onSuccess: () => {
-            router.push(
-              ROUTES.experiments.live(params.id, session.id),
-            );
-          },
-          onError: () => toast.error("Failed to start session"),
-        });
+  const handleLaunch = (
+    mode: SessionMode,
+    defenses: DefenseSelectionItem[],
+  ) => {
+    createSession.mutate(
+      { session_mode: mode, initial_defenses: defenses },
+      {
+        onSuccess: (session) => {
+          toast.success("Session created");
+          startSession.mutate(session.id, {
+            onSuccess: () => {
+              setShowLaunchModal(false);
+              router.push(ROUTES.experiments.live(params.id, session.id));
+            },
+            onError: () => toast.error("Failed to start session"),
+          });
+        },
+        onError: () => toast.error("Failed to create session"),
       },
-      onError: () => toast.error("Failed to create session"),
-    });
+    );
   };
+
+  // Check if comparison is possible (at least one completed attack + one completed defense)
+  const completedAttacks = sessions.filter(
+    (s) => s.session_mode === "attack" && s.status === "completed",
+  );
+  const completedDefenses = sessions.filter(
+    (s) => s.session_mode === "defense" && s.status === "completed",
+  );
+  const canCompare = completedAttacks.length > 0 && completedDefenses.length > 0;
 
   if (expLoading) {
     return (
@@ -125,12 +139,8 @@ export default function ExperimentDetailPage() {
               </p>
             )}
           </div>
-          <Button onClick={handleNewSession} disabled={createSession.isPending}>
-            {createSession.isPending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Play className="mr-2 h-4 w-4" />
-            )}
+          <Button onClick={() => setShowLaunchModal(true)}>
+            <Play className="mr-2 h-4 w-4" />
             Launch Session
           </Button>
         </div>
@@ -187,6 +197,20 @@ export default function ExperimentDetailPage() {
                 {sessions.length} session{sessions.length !== 1 && "s"} run
               </CardDescription>
             </div>
+            {canCompare && (
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  href={ROUTES.experiments.compare(
+                    params.id,
+                    completedAttacks[0].id,
+                    completedDefenses[0].id,
+                  )}
+                >
+                  <GitCompareArrows className="mr-2 h-4 w-4" />
+                  Compare
+                </Link>
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {sessLoading ? (
@@ -208,6 +232,7 @@ export default function ExperimentDetailPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Status</TableHead>
+                      <TableHead>Mode</TableHead>
                       <TableHead>Turns</TableHead>
                       <TableHead>Jailbreaks</TableHead>
                       <TableHead>ASR</TableHead>
@@ -231,6 +256,13 @@ export default function ExperimentDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <LaunchSessionModal
+        open={showLaunchModal}
+        onOpenChange={setShowLaunchModal}
+        onLaunch={handleLaunch}
+        isPending={createSession.isPending || startSession.isPending}
+      />
     </>
   );
 }
@@ -282,6 +314,28 @@ function SessionRow({
           className={STATUS_COLORS[session.status] ?? ""}
         >
           {session.status}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <Badge
+          variant="outline"
+          className={
+            session.session_mode === "defense"
+              ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+              : "bg-red-500/10 text-red-500 border-red-500/20"
+          }
+        >
+          {session.session_mode === "defense" ? (
+            <>
+              <Shield className="mr-1 h-3 w-3" />
+              Defense
+            </>
+          ) : (
+            <>
+              <Swords className="mr-1 h-3 w-3" />
+              Attack
+            </>
+          )}
         </Badge>
       </TableCell>
       <TableCell>{session.total_turns}</TableCell>

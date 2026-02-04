@@ -41,6 +41,13 @@ class AttackCategory(str, Enum):
 
 # Defense Types
 
+class SessionMode(str, Enum):
+    """Mode of a session: attack-only or defense-enabled."""
+
+    ATTACK = "attack"
+    DEFENSE = "defense"
+
+
 class DefenseType(str, Enum):
     """Type of defense mechanism."""
 
@@ -49,6 +56,8 @@ class DefenseType(str, Enum):
     ML_CLASSIFIER = "ml_classifier"
     LLM_JUDGE = "llm_judge"
     LAYERED = "layered"
+    SEMANTIC_GUARD = "semantic_guard"
+    TWO_PASS = "two_pass"
 
 
 # LangGraph Node Names

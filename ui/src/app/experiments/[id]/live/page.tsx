@@ -163,6 +163,28 @@ export default function LiveBattlePage() {
                 Completed
               </Badge>
             )}
+            {session && (
+              <Badge
+                variant="outline"
+                className={
+                  session.session_mode === "defense"
+                    ? "shrink-0 border-blue-500/20 bg-blue-500/10 text-blue-500"
+                    : "shrink-0 border-red-500/20 bg-red-500/10 text-red-500"
+                }
+              >
+                {session.session_mode === "defense" ? (
+                  <>
+                    <Shield className="mr-1 h-3 w-3" />
+                    Defense
+                  </>
+                ) : (
+                  <>
+                    <Swords className="mr-1 h-3 w-3" />
+                    Attack
+                  </>
+                )}
+              </Badge>
+            )}
           </div>
 
           {/* Scrollable chat area */}
@@ -342,6 +364,29 @@ export default function LiveBattlePage() {
                 </CardContent>
               </Card>
             )}
+
+            {session?.session_mode === "defense" &&
+              session.initial_defenses?.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Active Defenses</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {session.initial_defenses.map((d) => (
+                      <AgentBadge
+                        key={d.name}
+                        icon={<Shield className="h-3 w-3" />}
+                        label={d.name}
+                        model={
+                          d.params && Object.keys(d.params).length > 0
+                            ? "Custom"
+                            : "Default"
+                        }
+                      />
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
           </div>
         </div>
       </div>

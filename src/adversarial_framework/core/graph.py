@@ -50,6 +50,9 @@ logger = structlog.get_logger(__name__)
 
 APPLY_DEFENSES_NODE = "apply_defenses"
 
+# Defense names that require a provider instance for LLM-based evaluation
+_PROVIDER_DEFENSES = {"llm_judge", "two_pass"}
+
 
 # Node Functions
 
@@ -94,8 +97,17 @@ def _build_router(max_turns: int, max_cost_usd: float) -> Any:
 
         # Verdict-based routing
         if verdict == JudgeVerdict.JAILBREAK:
-            logger.info("route_defend", turn=turn)
-            return ROUTE_DEFEND
+            defense_enabled = state.get("defense_enabled", False)
+            if defense_enabled:
+                logger.info("route_defend", turn=turn, mode="defense")
+                return ROUTE_DEFEND
+            else:
+                logger.info(
+                    "route_continue_attack_mode",
+                    turn=turn,
+                    verdict=verdict,
+                )
+                return ROUTE_CONTINUE
 
         # Continue for refused, borderline, error, or None
         logger.info("route_continue", turn=turn, verdict=verdict)
@@ -163,7 +175,11 @@ def _build_history_recorder() -> Any:
 
 # Defense Application
 
-def _build_defense_applicator(target: TargetInterface) -> Any:
+def _build_defense_applicator(
+    target: TargetInterface,
+    provider: BaseProvider | None = None,
+    defense_model: str | None = None,
+) -> Any:
     """Return a node that applies DefenseActions to the TargetInterface.
 
     Reads the latest defense_actions from state, instantiates live defenses,
@@ -179,9 +195,12 @@ def _build_defense_applicator(target: TargetInterface) -> Any:
         current_turn = state.get("current_turn", 0)
         new_actions = [a for a in actions if a.triggered_by_turn == current_turn]
 
+        # Use defender_model from state if available, otherwise fall back
+        model = state.get("defender_model") or defense_model
+
         applied = 0
         for action in new_actions:
-            defense = _instantiate_defense(action)
+            defense = _instantiate_defense(action, provider=provider, defense_model=model)
             if defense is not None:
                 target.add_defense(defense)
                 applied += 1
@@ -206,10 +225,14 @@ def _build_defense_applicator(target: TargetInterface) -> Any:
     return _apply
 
 
-def _instantiate_defense(action: DefenseAction) -> Any:
+def _instantiate_defense(
+    action: DefenseAction,
+    provider: BaseProvider | None = None,
+    defense_model: str | None = None,
+) -> Any:
     """Convert a DefenseAction into a live BaseDefense instance."""
     dtype = action.defense_type
-    config = action.defense_config
+    config = dict(action.defense_config)  # copy so we can inject provider/model
 
     # Prompt patches update state directly — no defense object needed
     if dtype == DefenseType.PROMPT_PATCH.value:
@@ -234,6 +257,11 @@ def _instantiate_defense(action: DefenseAction) -> Any:
     DefenseRegistry.discover()
     try:
         cls = DefenseRegistry.get(registry_name)
+        # Inject provider and model for LLM-powered defenses
+        if registry_name in _PROVIDER_DEFENSES and provider is not None:
+            config["provider"] = provider
+            if "model" not in config and defense_model:
+                config["model"] = defense_model
         return cls(**config)
     except (KeyError, TypeError):
         logger.warning("defense_instantiation_failed", type=dtype)
@@ -245,6 +273,8 @@ _DEFENSE_TYPE_TO_REGISTRY: dict[str, str] = {
     DefenseType.LLM_JUDGE.value: "llm_judge",
     DefenseType.LAYERED.value: "layered",
     DefenseType.ML_CLASSIFIER.value: "ml_guardrails",
+    DefenseType.SEMANTIC_GUARD.value: "semantic_guard",
+    DefenseType.TWO_PASS.value: "two_pass",
 }
 
 
@@ -258,6 +288,9 @@ def build_graph(
     target_system_prompt: str | None = None,
     max_turns: int = 20,
     max_cost_usd: float = 10.0,
+    session_mode: str = "attack",
+    initial_defenses: list[dict[str, Any]] | None = None,
+    defense_model: str | None = None,
 ) -> StateGraph:
     """Construct the main adversarial cycle LangGraph.
 
@@ -269,6 +302,9 @@ def build_graph(
         target_system_prompt: Optional system prompt for the target LLM.
         max_turns: Maximum attack turns before termination.
         max_cost_usd: Maximum cost budget before termination.
+        session_mode: ``"attack"`` (no defenses) or ``"defense"`` (arms race).
+        initial_defenses: Defense configs to load at start (defense mode only).
+        defense_model: Model name for LLM-powered defenses (from user config).
 
     Returns:
         A compiled LangGraph ``StateGraph``.
@@ -282,8 +318,36 @@ def build_graph(
     analyzer = AnalyzerAgent(config=analyzer_config, provider=provider)
     target = TargetInterface(provider=provider, system_prompt=target_system_prompt)
     defender = DefenderAgent(config=defender_config, provider=provider)
+
+    # Load pre-configured defenses for defense mode
+    if session_mode == "defense" and initial_defenses:
+        DefenseRegistry.discover()
+        for defense_cfg in initial_defenses:
+            defense_name = defense_cfg.get("name", "")
+            defense_params = dict(defense_cfg.get("params", {}))
+            try:
+                cls = DefenseRegistry.get(defense_name)
+                # Inject provider and model for LLM-powered defenses
+                if defense_name in _PROVIDER_DEFENSES:
+                    defense_params["provider"] = provider
+                    if "model" not in defense_params and defense_model:
+                        defense_params["model"] = defense_model
+                defense_instance = cls(**defense_params)
+                target.add_defense(defense_instance)
+                logger.info(
+                    "initial_defense_loaded",
+                    defense=defense_name,
+                )
+            except (KeyError, TypeError) as exc:
+                logger.warning(
+                    "initial_defense_load_failed",
+                    name=defense_name,
+                    error=str(exc),
+                )
     record_history = _build_history_recorder()
-    apply_defenses = _build_defense_applicator(target)
+    apply_defenses = _build_defense_applicator(
+        target, provider=provider, defense_model=defense_model,
+    )
     router = _build_router(max_turns=max_turns, max_cost_usd=max_cost_usd)
 
     # Build graph

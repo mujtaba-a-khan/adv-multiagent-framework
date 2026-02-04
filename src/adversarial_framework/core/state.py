@@ -110,6 +110,11 @@ class AdversarialState(TypedDict):
     attack_objective: str  # The behaviour we want to elicit
     strategy_config: dict[str, Any]  # Selected strategy + params
 
+    # Defense Configuration (set once at initialisation, read-only during run)
+    session_mode: str  # "attack" or "defense"
+    initial_defense_config: list[dict[str, Any]]  # defense names + params to load at start
+    defense_enabled: bool  # True when session_mode == "defense"
+
     # Execution Control
     status: Annotated[SessionStatus, latest]
     current_turn: Annotated[int, latest]

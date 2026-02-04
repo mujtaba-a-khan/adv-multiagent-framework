@@ -13,6 +13,8 @@ export interface PendingTurn {
   is_baseline?: boolean;
   /** Attack objective text sent with turn_start so the UI can preview it. */
   attack_objective?: string;
+  /** Session mode broadcast with the first turn_start event. */
+  session_mode?: string;
 }
 
 interface WSStore {
@@ -49,6 +51,7 @@ export const useWSStore = create<WSStore>((set, get) => ({
             pendingTurn: {
               turn_number: msg.turn_number ?? 0,
               attack_objective: (msg.data?.attack_objective as string) || undefined,
+              session_mode: (msg.data?.session_mode as string) || undefined,
             },
           });
           break;

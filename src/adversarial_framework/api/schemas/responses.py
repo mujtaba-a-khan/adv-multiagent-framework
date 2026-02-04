@@ -44,6 +44,8 @@ class SessionResponse(BaseModel):
     id: uuid.UUID
     experiment_id: uuid.UUID
     status: str
+    session_mode: str
+    initial_defenses: list[dict]
     total_turns: int
     total_jailbreaks: int
     total_refused: int
@@ -127,6 +129,32 @@ class ModelListResponse(BaseModel):
 class HealthResponse(BaseModel):
     provider: str
     healthy: bool
+
+
+# Defenses
+
+class DefenseInfoResponse(BaseModel):
+    """Metadata for a single registered defense mechanism."""
+
+    name: str
+    description: str
+    defense_type: str
+
+
+class DefenseListResponse(BaseModel):
+    defenses: list[DefenseInfoResponse]
+    total: int
+
+
+# Comparisons
+
+class SessionComparisonResponse(BaseModel):
+    """Side-by-side comparison of an attack and defense session."""
+
+    attack_session: SessionResponse
+    defense_session: SessionResponse
+    attack_turns: list[TurnResponse]
+    defense_turns: list[TurnResponse]
 
 
 # WebSocket Messages

@@ -42,8 +42,17 @@ class UpdateExperimentRequest(BaseModel):
     max_cost_usd: float | None = Field(default=None, ge=0.0, le=500.0)
 
 
-class StartSessionRequest(BaseModel):
-    """Request body for starting a new session (optional overrides)."""
+class DefenseSelectionItem(BaseModel):
+    """A single defense selection with optional parameter overrides."""
 
+    name: str = Field(..., min_length=1, max_length=64)
+    params: dict = Field(default_factory=dict)
+
+
+class StartSessionRequest(BaseModel):
+    """Request body for creating a new session with mode selection."""
+
+    session_mode: str = Field(default="attack", pattern=r"^(attack|defense)$")
+    initial_defenses: list[DefenseSelectionItem] | None = Field(default=None)
     max_turns: int | None = Field(default=None, ge=1, le=100)
     max_cost_usd: float | None = Field(default=None, ge=0.0, le=500.0)
