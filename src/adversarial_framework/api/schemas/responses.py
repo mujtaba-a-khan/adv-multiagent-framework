@@ -46,6 +46,10 @@ class SessionResponse(BaseModel):
     status: str
     session_mode: str
     initial_defenses: list[dict]
+    strategy_name: str
+    strategy_params: dict
+    max_turns: int
+    max_cost_usd: float
     total_turns: int
     total_jailbreaks: int
     total_refused: int

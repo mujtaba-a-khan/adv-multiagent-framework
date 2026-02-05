@@ -117,10 +117,10 @@ export default function DashboardPage() {
                           </p>
                           <Badge
                             variant="outline"
-                            className="text-[10px] uppercase tracking-wider"
+                            className="text-[10px] tracking-wider"
                           >
-                            {CATEGORY_LABELS[exp.strategy_name] ??
-                              exp.strategy_name}
+                            <Target className="mr-1 h-3 w-3" />
+                            {exp.target_model}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-1">
@@ -132,9 +132,6 @@ export default function DashboardPage() {
                           {formatDistanceToNow(new Date(exp.created_at), {
                             addSuffix: true,
                           })}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {exp.target_model}
                         </span>
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground" />

@@ -62,7 +62,7 @@ class StrategyChainStrategy(BaseAttackStrategy):
         ),
         estimated_asr="75-95%",
         min_turns=2,
-        max_turns=20,
+        max_turns=4,
         requires_white_box=False,
         supports_multi_turn=True,
         parameters={

@@ -116,7 +116,7 @@ export default function LiveBattlePage() {
       : "0.0";
 
   const turnsProgress = session
-    ? (session.total_turns / (experiment?.max_turns ?? 20)) * 100
+    ? (session.total_turns / session.max_turns) * 100
     : 0;
 
   return (
@@ -138,9 +138,9 @@ export default function LiveBattlePage() {
                 {experiment?.name ?? "Battle Session"}
               </h3>
               <p className="truncate text-xs text-muted-foreground">
-                {experiment?.strategy_name
-                  ? (CATEGORY_LABELS[experiment.strategy_name] ??
-                    experiment.strategy_name)
+                {session?.strategy_name
+                  ? (CATEGORY_LABELS[session.strategy_name] ??
+                    session.strategy_name)
                   : ""}{" "}
                 vs {experiment?.target_model}
               </p>
@@ -161,6 +161,14 @@ export default function LiveBattlePage() {
               >
                 <ShieldCheck className="mr-1 h-3 w-3" />
                 Completed
+              </Badge>
+            )}
+            {session?.status === "failed" && (
+              <Badge
+                variant="outline"
+                className="shrink-0 border-red-500/20 bg-red-500/10 text-red-500"
+              >
+                Failed
               </Badge>
             )}
             {session && (
@@ -200,7 +208,9 @@ export default function LiveBattlePage() {
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Swords className="h-10 w-10 text-muted-foreground" />
                     <p className="mt-3 text-sm text-muted-foreground">
-                      No turns recorded yet.
+                      {session?.status === "failed"
+                        ? "This session failed before completing any turns. Check the backend logs for details."
+                        : "No turns recorded yet."}
                     </p>
                   </div>
                 )}
@@ -275,7 +285,7 @@ export default function LiveBattlePage() {
                     <MetricRow label="Status" value={session.status} />
                     <MetricRow
                       label="Turns"
-                      value={`${session.total_turns} / ${experiment?.max_turns ?? "?"}`}
+                      value={`${session.total_turns} / ${session.max_turns}`}
                     />
                     <Progress value={turnsProgress} className="h-1.5" />
                     <Separator />

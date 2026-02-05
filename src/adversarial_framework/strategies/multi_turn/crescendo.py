@@ -87,7 +87,7 @@ class CrescendoStrategy(BaseAttackStrategy):
         ),
         estimated_asr="70-85%",
         min_turns=3,
-        max_turns=10,
+        max_turns=6,
         requires_white_box=False,
         supports_multi_turn=True,
         parameters={

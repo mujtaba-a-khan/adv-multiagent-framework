@@ -94,7 +94,7 @@ class PayloadSmugglingStrategy(BaseAttackStrategy):
         ),
         estimated_asr="50-75%",
         min_turns=1,
-        max_turns=10,
+        max_turns=6,
         requires_white_box=False,
         supports_multi_turn=False,
         parameters={

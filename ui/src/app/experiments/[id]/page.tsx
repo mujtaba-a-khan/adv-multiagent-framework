@@ -3,16 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
-  DollarSign,
+  Brain,
   GitCompareArrows,
   Play,
   Radio,
   Shield,
   Swords,
   Target,
+  Trash,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
@@ -26,7 +27,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -41,8 +41,9 @@ import {
   useSessions,
   useCreateSession,
   useStartSession,
+  useDeleteSession,
 } from "@/hooks/use-sessions";
-import { ROUTES, STATUS_COLORS, CATEGORY_LABELS } from "@/lib/constants";
+import { ROUTES, STATUS_COLORS } from "@/lib/constants";
 import type { DefenseSelectionItem, Session, SessionMode } from "@/lib/types";
 
 export default function ExperimentDetailPage() {
@@ -54,16 +55,33 @@ export default function ExperimentDetailPage() {
   );
   const createSession = useCreateSession(params.id);
   const startSession = useStartSession(params.id);
+  const deleteSessionMutation = useDeleteSession(params.id);
 
   const sessions = sessionsData?.sessions ?? [];
   const [showLaunchModal, setShowLaunchModal] = useState(false);
 
+  const handleDeleteSession = (sessionId: string) => {
+    deleteSessionMutation.mutate(sessionId, {
+      onSuccess: () => toast.success("Session deleted"),
+      onError: () => toast.error("Failed to delete session"),
+    });
+  };
+
   const handleLaunch = (
     mode: SessionMode,
     defenses: DefenseSelectionItem[],
+    strategyName: string,
+    maxTurns: number,
+    maxCostUsd: number,
   ) => {
     createSession.mutate(
-      { session_mode: mode, initial_defenses: defenses },
+      {
+        session_mode: mode,
+        initial_defenses: defenses,
+        strategy_name: strategyName,
+        max_turns: maxTurns,
+        max_cost_usd: maxCostUsd,
+      },
       {
         onSuccess: (session) => {
           toast.success("Session created");
@@ -145,7 +163,7 @@ export default function ExperimentDetailPage() {
           </Button>
         </div>
 
-        {/* Config summary */}
+        {/* Config summary — agent cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ConfigCard
             icon={<Target className="h-4 w-4" />}
@@ -155,24 +173,21 @@ export default function ExperimentDetailPage() {
           />
           <ConfigCard
             icon={<Swords className="h-4 w-4" />}
-            label="Strategy"
-            value={
-              CATEGORY_LABELS[experiment.strategy_name] ??
-              experiment.strategy_name
-            }
-            sub={`Max ${experiment.max_turns} turns`}
+            label="Attacker"
+            value={experiment.attacker_model}
+            sub="Attack generation"
+          />
+          <ConfigCard
+            icon={<Brain className="h-4 w-4" />}
+            label="Analyzer / Judge"
+            value={experiment.analyzer_model}
+            sub="Verdict evaluation"
           />
           <ConfigCard
             icon={<Shield className="h-4 w-4" />}
-            label="Agents"
-            value={experiment.attacker_model.split(":")[0]}
-            sub={`Judge: ${experiment.analyzer_model.split(":")[0]}`}
-          />
-          <ConfigCard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Budget"
-            value={`$${experiment.max_cost_usd.toFixed(2)}`}
-            sub={`Created ${formatDistanceToNow(new Date(experiment.created_at), { addSuffix: true })}`}
+            label="Defender"
+            value={experiment.defender_model}
+            sub="Guardrail generation"
           />
         </div>
 
@@ -233,10 +248,11 @@ export default function ExperimentDetailPage() {
                     <TableRow>
                       <TableHead>Status</TableHead>
                       <TableHead>Mode</TableHead>
+                      <TableHead>Strategy</TableHead>
                       <TableHead>Turns</TableHead>
                       <TableHead>Jailbreaks</TableHead>
                       <TableHead>ASR</TableHead>
-                      <TableHead>Cost</TableHead>
+                      <TableHead>Budget</TableHead>
                       <TableHead>Started</TableHead>
                       <TableHead className="w-12" />
                     </TableRow>
@@ -247,6 +263,7 @@ export default function ExperimentDetailPage() {
                         key={s.id}
                         session={s}
                         experimentId={params.id}
+                        onDelete={handleDeleteSession}
                       />
                     ))}
                   </TableBody>
@@ -285,9 +302,9 @@ function ConfigCard({
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
             {icon}
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs text-muted-foreground">{label}</p>
-            <p className="text-sm font-medium">{value}</p>
+            <p className="text-sm font-medium truncate">{value}</p>
             <p className="text-xs text-muted-foreground">{sub}</p>
           </div>
         </div>
@@ -296,12 +313,21 @@ function ConfigCard({
   );
 }
 
+function formatStrategyName(name: string): string {
+  return name
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 function SessionRow({
   session,
   experimentId,
+  onDelete,
 }: {
   session: Session;
   experimentId: string;
+  onDelete: (sessionId: string) => void;
 }) {
   const asr =
     session.asr !== null ? `${(session.asr * 100).toFixed(1)}%` : "—";
@@ -338,13 +364,28 @@ function SessionRow({
           )}
         </Badge>
       </TableCell>
-      <TableCell>{session.total_turns}</TableCell>
+      <TableCell>
+        <span className="text-sm font-medium">
+          {formatStrategyName(session.strategy_name)}
+        </span>
+      </TableCell>
+      <TableCell>
+        <span className="font-mono text-sm">
+          {session.total_turns}
+          <span className="text-muted-foreground">/{session.max_turns}</span>
+        </span>
+      </TableCell>
       <TableCell className="text-red-500 font-medium">
         {session.total_jailbreaks}
       </TableCell>
       <TableCell className="font-mono text-sm">{asr}</TableCell>
       <TableCell className="text-muted-foreground">
-        ${session.estimated_cost_usd.toFixed(4)}
+        <span className="font-mono text-sm">
+          ${session.estimated_cost_usd.toFixed(2)}
+          <span className="text-muted-foreground text-xs">
+            {" "}/ ${session.max_cost_usd.toFixed(2)}
+          </span>
+        </span>
       </TableCell>
       <TableCell className="text-muted-foreground text-xs">
         {session.started_at
@@ -354,16 +395,28 @@ function SessionRow({
           : "—"}
       </TableCell>
       <TableCell>
-        {(session.status === "running" || session.status === "completed") && (
-          <Button variant="ghost" size="sm" asChild>
-            <Link
-              href={ROUTES.experiments.live(experimentId, session.id)}
+        <div className="flex items-center gap-1">
+          {(session.status === "running" || session.status === "completed" || session.status === "failed") && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link
+                href={ROUTES.experiments.live(experimentId, session.id)}
+              >
+                <Radio className="mr-1 h-3 w-3" />
+                View
+              </Link>
+            </Button>
+          )}
+          {session.status !== "running" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+              onClick={() => onDelete(session.id)}
             >
-              <Radio className="mr-1 h-3 w-3" />
-              View
-            </Link>
-          </Button>
-        )}
+              <Trash className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </TableCell>
     </TableRow>
   );

@@ -81,7 +81,7 @@ class PromptExtractionStrategy(BaseAttackStrategy):
         ),
         estimated_asr="40-70%",
         min_turns=1,
-        max_turns=10,
+        max_turns=7,
         requires_white_box=False,
         supports_multi_turn=True,
         parameters={

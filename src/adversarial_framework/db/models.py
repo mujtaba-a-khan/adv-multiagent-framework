@@ -96,6 +96,12 @@ class Session(Base):
     session_mode: Mapped[str] = mapped_column(String(32), default="attack", nullable=False)
     initial_defenses: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
+    # Session-level strategy and budget (set per-session at launch time)
+    strategy_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    strategy_params: Mapped[dict] = mapped_column(JSON, default=dict)
+    max_turns: Mapped[int] = mapped_column(Integer, nullable=False)
+    max_cost_usd: Mapped[float] = mapped_column(Float, nullable=False)
+
     # Aggregated metrics
     total_turns: Mapped[int] = mapped_column(Integer, default=0)
     total_jailbreaks: Mapped[int] = mapped_column(Integer, default=0)

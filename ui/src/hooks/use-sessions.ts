@@ -4,6 +4,7 @@ import {
   getSession,
   createSession,
   startSession,
+  deleteSession,
 } from "@/lib/api-client";
 import type { StartSessionRequest } from "@/lib/types";
 
@@ -47,6 +48,17 @@ export function useStartSession(experimentId: string) {
       qc.invalidateQueries({
         queryKey: ["session", experimentId, sessionId],
       });
+    },
+  });
+}
+
+export function useDeleteSession(experimentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sessionId: string) =>
+      deleteSession(experimentId, sessionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sessions", experimentId] });
     },
   });
 }

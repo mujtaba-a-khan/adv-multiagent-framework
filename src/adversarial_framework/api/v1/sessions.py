@@ -37,6 +37,9 @@ class _ExperimentSnapshot:
     DB session is closed after the request handler returns.  Accessing
     expired/lazy attributes outside the session raises a greenlet error.
     Snapshot all needed fields while the session is still open.
+
+    Strategy and budget are NOT included here — they live on the Session
+    since each session can use a different strategy.
     """
 
     id: uuid.UUID
@@ -47,10 +50,6 @@ class _ExperimentSnapshot:
     analyzer_model: str
     defender_model: str
     attack_objective: str
-    strategy_name: str
-    strategy_params: dict[str, Any] | None
-    max_turns: int
-    max_cost_usd: float
 
     @classmethod
     def from_orm(cls, experiment: object) -> _ExperimentSnapshot:
@@ -63,10 +62,6 @@ class _ExperimentSnapshot:
             analyzer_model=experiment.analyzer_model,
             defender_model=experiment.defender_model,
             attack_objective=experiment.attack_objective,
-            strategy_name=experiment.strategy_name,
-            strategy_params=experiment.strategy_params,
-            max_turns=experiment.max_turns,
-            max_cost_usd=experiment.max_cost_usd,
         )
 
 
@@ -77,7 +72,7 @@ class _ExperimentSnapshot:
 )
 async def create_session(
     experiment_id: uuid.UUID,
-    body: StartSessionRequest | None = None,
+    body: StartSessionRequest,
     experiment_repo: ExperimentRepository = Depends(get_experiment_repo),
     session_repo: SessionRepository = Depends(get_session_repo),
 ) -> SessionResponse:
@@ -85,16 +80,19 @@ async def create_session(
     if experiment is None:
         raise HTTPException(status_code=404, detail="Experiment not found")
 
-    session_mode = body.session_mode if body else "attack"
     initial_defenses = (
         [d.model_dump() for d in body.initial_defenses]
-        if body and body.initial_defenses
+        if body.initial_defenses
         else []
     )
     session = await session_repo.create(
         experiment_id=experiment_id,
-        session_mode=session_mode,
+        session_mode=body.session_mode,
         initial_defenses=initial_defenses,
+        strategy_name=body.strategy_name,
+        strategy_params=body.strategy_params,
+        max_turns=body.max_turns,
+        max_cost_usd=body.max_cost_usd,
     )
     return SessionResponse.model_validate(session)
 
@@ -109,12 +107,12 @@ async def list_sessions(
     limit: int = 50,
     session_repo: SessionRepository = Depends(get_session_repo),
 ) -> SessionListResponse:
-    sessions = await session_repo.list_by_experiment(
+    sessions, total = await session_repo.list_by_experiment(
         experiment_id, offset=offset, limit=limit
     )
     return SessionListResponse(
         sessions=[SessionResponse.model_validate(s) for s in sessions],
-        total=len(sessions),
+        total=total,
     )
 
 
@@ -131,6 +129,28 @@ async def get_session(
     if session is None or session.experiment_id != experiment_id:
         raise HTTPException(status_code=404, detail="Session not found")
     return SessionResponse.model_validate(session)
+
+
+@router.delete(
+    "/{experiment_id}/sessions/{session_id}",
+    status_code=204,
+)
+async def delete_session(
+    experiment_id: uuid.UUID,
+    session_id: uuid.UUID,
+    session_repo: SessionRepository = Depends(get_session_repo),
+) -> None:
+    """Delete a session and all its associated turns."""
+    session = await session_repo.get(session_id)
+    if session is None or session.experiment_id != experiment_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    if session.status == "running":
+        raise HTTPException(
+            status_code=409, detail="Cannot delete a running session"
+        )
+
+    await session_repo.delete(session_id)
 
 
 @router.post(
@@ -159,16 +179,25 @@ async def start_session(
             status_code=409, detail=f"Session is already '{session.status}'"
         )
 
-    # Snapshot experiment data BEFORE update_status() which calls
-    # expire_all() and invalidates ORM objects in the identity map.
+    # Snapshot experiment + session data BEFORE update_status() which
+    # calls expire_all() and invalidates ORM objects in the identity map.
     experiment_snap = _ExperimentSnapshot.from_orm(experiment)
     session_mode = session.session_mode
     initial_defenses = session.initial_defenses or []
+    strategy_name = session.strategy_name
+    strategy_params = session.strategy_params or {}
+    max_turns = session.max_turns
+    max_cost_usd = session.max_cost_usd
 
     await session_repo.update_status(session_id, "running")
 
-    # Launch graph execution in background — pass the plain snapshot,
-    # not the ORM object, so the background task is decoupled from
+    # Commit the status + started_at update now so the background
+    # task can freely write to the same session row without waiting
+    # for this transaction to finish.
+    await session_repo.db.commit()
+
+    # Launch graph execution in background — pass plain snapshots,
+    # not ORM objects, so the background task is decoupled from
     # the request's DB session.
     background_tasks.add_task(
         _run_graph_session,
@@ -177,6 +206,10 @@ async def start_session(
         provider=provider,
         session_mode=session_mode,
         initial_defenses=initial_defenses,
+        strategy_name=strategy_name,
+        strategy_params=strategy_params,
+        max_turns=max_turns,
+        max_cost_usd=max_cost_usd,
     )
 
     # Re-fetch to get updated status
@@ -287,10 +320,15 @@ async def _persist_turn_and_metrics(
 def _build_initial_state(
     experiment: object,
     sid: str,
-    session_mode: str = "attack",
+    *,
+    session_mode: str,
     initial_defenses: list[dict[str, Any]] | None = None,
+    strategy_name: str,
+    strategy_params: dict[str, Any] | None = None,
+    max_turns: int,
+    max_cost_usd: float,
 ) -> dict:
-    """Assemble the initial LangGraph state from an experiment record."""
+    """Assemble the initial LangGraph state from experiment + session config."""
     from adversarial_framework.core.constants import SessionStatus
     from adversarial_framework.core.state import TokenBudget
 
@@ -305,8 +343,8 @@ def _build_initial_state(
         "defender_model": experiment.defender_model,
         "attack_objective": experiment.attack_objective,
         "strategy_config": {
-            "name": experiment.strategy_name,
-            "params": experiment.strategy_params or {},
+            "name": strategy_name,
+            "params": strategy_params or {},
         },
         # Defense configuration
         "session_mode": session_mode,
@@ -315,8 +353,8 @@ def _build_initial_state(
         # Execution control
         "status": SessionStatus.PENDING,
         "current_turn": 0,
-        "max_turns": experiment.max_turns,
-        "max_cost_usd": experiment.max_cost_usd,
+        "max_turns": max_turns,
+        "max_cost_usd": max_cost_usd,
         "selected_strategy": None,
         "strategy_params": None,
         "planning_notes": None,
@@ -353,8 +391,13 @@ async def _run_graph_session(
     experiment: object,
     session_id: uuid.UUID,
     provider: OllamaProvider,
-    session_mode: str = "attack",
+    *,
+    session_mode: str,
     initial_defenses: list[dict[str, Any]] | None = None,
+    strategy_name: str,
+    strategy_params: dict[str, Any] | None = None,
+    max_turns: int,
+    max_cost_usd: float,
 ) -> None:
     """Execute the LangGraph adversarial loop with real-time streaming.
 
@@ -375,8 +418,8 @@ async def _run_graph_session(
             attacker_config={"model": experiment.attacker_model},
             analyzer_config={"model": experiment.analyzer_model},
             target_system_prompt=experiment.target_system_prompt,
-            max_turns=experiment.max_turns,
-            max_cost_usd=experiment.max_cost_usd,
+            max_turns=max_turns,
+            max_cost_usd=max_cost_usd,
             session_mode=session_mode,
             initial_defenses=initial_defenses,
             defense_model=experiment.defender_model,
@@ -386,6 +429,10 @@ async def _run_graph_session(
             experiment, sid,
             session_mode=session_mode,
             initial_defenses=initial_defenses,
+            strategy_name=strategy_name,
+            strategy_params=strategy_params,
+            max_turns=max_turns,
+            max_cost_usd=max_cost_usd,
         )
         metrics = _SessionMetrics()
 

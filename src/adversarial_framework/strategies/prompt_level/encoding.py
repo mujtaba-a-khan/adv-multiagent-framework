@@ -71,7 +71,7 @@ class EncodingStrategy(BaseAttackStrategy):
         ),
         estimated_asr="76.2%",
         min_turns=1,
-        max_turns=10,
+        max_turns=5,
         requires_white_box=False,
         supports_multi_turn=False,
         parameters={

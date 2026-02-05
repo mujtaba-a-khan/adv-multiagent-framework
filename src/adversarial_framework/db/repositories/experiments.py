@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -38,7 +38,7 @@ class ExperimentRepository:
 
     async def list_all(
         self, offset: int = 0, limit: int = 50
-    ) -> Sequence[Experiment]:
+    ) -> tuple[Sequence[Experiment], int]:
         stmt = (
             select(Experiment)
             .order_by(Experiment.created_at.desc())
@@ -46,7 +46,14 @@ class ExperimentRepository:
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        experiments = result.scalars().all()
+
+        count_result = await self.session.execute(
+            select(func.count()).select_from(Experiment)
+        )
+        total = count_result.scalar_one()
+
+        return experiments, total
 
     async def update(
         self, experiment_id: uuid.UUID, **kwargs: object

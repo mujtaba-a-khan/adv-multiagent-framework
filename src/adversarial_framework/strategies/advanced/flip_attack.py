@@ -80,7 +80,7 @@ class FlipAttackStrategy(BaseAttackStrategy):
         ),
         estimated_asr="~98% GPT-4o",
         min_turns=1,
-        max_turns=5,
+        max_turns=4,
         requires_white_box=False,
         supports_multi_turn=False,
         parameters={

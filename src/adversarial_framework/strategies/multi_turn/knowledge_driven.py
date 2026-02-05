@@ -145,7 +145,7 @@ class KnowledgeDrivenStrategy(BaseAttackStrategy):
         ),
         estimated_asr="65-80%",
         min_turns=2,
-        max_turns=10,
+        max_turns=6,
         requires_white_box=False,
         supports_multi_turn=True,
         parameters={

@@ -13,14 +13,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -39,7 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useExperiments, useDeleteExperiment } from "@/hooks/use-experiments";
-import { ROUTES, CATEGORY_LABELS } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 
 export default function ExperimentsPage() {
   const [search, setSearch] = useState("");
@@ -52,7 +49,7 @@ export default function ExperimentsPage() {
         (e) =>
           e.name.toLowerCase().includes(search.toLowerCase()) ||
           e.attack_objective.toLowerCase().includes(search.toLowerCase()) ||
-          e.strategy_name.toLowerCase().includes(search.toLowerCase()),
+          e.target_model.toLowerCase().includes(search.toLowerCase()),
       )
     : experiments;
 
@@ -122,9 +119,10 @@ export default function ExperimentsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Strategy</TableHead>
-                      <TableHead>Target Model</TableHead>
-                      <TableHead>Max Turns</TableHead>
+                      <TableHead>Target</TableHead>
+                      <TableHead>Attacker</TableHead>
+                      <TableHead>Judge</TableHead>
+                      <TableHead>Defender</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="w-12" />
                     </TableRow>
@@ -144,18 +142,24 @@ export default function ExperimentsPage() {
                           </p>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {CATEGORY_LABELS[exp.strategy_name] ??
-                              exp.strategy_name}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
                           <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
                             {exp.target_model}
                           </code>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {exp.max_turns}
+                        <TableCell>
+                          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                            {exp.attacker_model}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                            {exp.analyzer_model}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                            {exp.defender_model}
+                          </code>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-xs">
                           {formatDistanceToNow(new Date(exp.created_at), {

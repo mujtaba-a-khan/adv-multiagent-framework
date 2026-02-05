@@ -35,10 +35,10 @@ async def list_experiments(
     limit: int = 50,
     repo: ExperimentRepository = Depends(get_experiment_repo),
 ) -> ExperimentListResponse:
-    experiments = await repo.list_all(offset=offset, limit=limit)
+    experiments, total = await repo.list_all(offset=offset, limit=limit)
     return ExperimentListResponse(
         experiments=[ExperimentResponse.model_validate(e) for e in experiments],
-        total=len(experiments),
+        total=total,
     )
 
 

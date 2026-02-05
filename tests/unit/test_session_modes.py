@@ -199,7 +199,11 @@ class TestInitialStateBuilding:
     """Test _build_initial_state includes session mode fields."""
 
     def _make_experiment_snapshot(self):
-        """Create a minimal experiment-like object."""
+        """Create a minimal experiment-like object.
+
+        Strategy and budget are no longer on the experiment — they live on the
+        session and are passed separately to _build_initial_state.
+        """
         from dataclasses import dataclass
         from uuid import uuid4
 
@@ -213,17 +217,20 @@ class TestInitialStateBuilding:
             analyzer_model = "test-analyzer"
             defender_model = "test-defender"
             attack_objective = "test objective"
-            strategy_name = "pair"
-            strategy_params = {}
-            max_turns = 10
-            max_cost_usd = 5.0
 
         return FakeExperiment()
 
     def test_default_attack_mode(self):
         from adversarial_framework.api.v1.sessions import _build_initial_state
 
-        state = _build_initial_state(self._make_experiment_snapshot(), "sid-1")
+        state = _build_initial_state(
+            self._make_experiment_snapshot(),
+            "sid-1",
+            session_mode="attack",
+            strategy_name="pair",
+            max_turns=10,
+            max_cost_usd=5.0,
+        )
         assert state["session_mode"] == "attack"
         assert state["defense_enabled"] is False
         assert state["initial_defense_config"] == []
@@ -237,6 +244,9 @@ class TestInitialStateBuilding:
             "sid-2",
             session_mode="defense",
             initial_defenses=defenses,
+            strategy_name="pair",
+            max_turns=10,
+            max_cost_usd=5.0,
         )
         assert state["session_mode"] == "defense"
         assert state["defense_enabled"] is True
@@ -250,20 +260,55 @@ class TestInitialStateBuilding:
             "sid-3",
             session_mode="attack",
             initial_defenses=None,
+            strategy_name="tap",
+            max_turns=15,
+            max_cost_usd=8.0,
         )
         assert state["session_mode"] == "attack"
         assert state["defense_enabled"] is False
+
+    def test_state_uses_session_strategy(self):
+        """Strategy and budget in state come from session-level params, not experiment."""
+        from adversarial_framework.api.v1.sessions import _build_initial_state
+
+        state = _build_initial_state(
+            self._make_experiment_snapshot(),
+            "sid-4",
+            session_mode="attack",
+            strategy_name="crescendo",
+            strategy_params={"ramp_rate": 0.5},
+            max_turns=25,
+            max_cost_usd=15.0,
+        )
+        assert state["strategy_config"]["name"] == "crescendo"
+        assert state["strategy_config"]["params"] == {"ramp_rate": 0.5}
+        assert state["max_turns"] == 25
+        assert state["max_cost_usd"] == pytest.approx(15.0)
 
 
 class TestRequestSchemaValidation:
     """Test StartSessionRequest Pydantic validation."""
 
+    def test_requires_strategy_fields(self):
+        """strategy_name, max_turns, max_cost_usd are required."""
+        from pydantic import ValidationError
+
+        from adversarial_framework.api.schemas.requests import StartSessionRequest
+
+        with pytest.raises(ValidationError):
+            StartSessionRequest()  # missing required fields
+
     def test_default_mode_is_attack(self):
         from adversarial_framework.api.schemas.requests import StartSessionRequest
 
-        req = StartSessionRequest()
+        req = StartSessionRequest(
+            strategy_name="pair", max_turns=20, max_cost_usd=10.0,
+        )
         assert req.session_mode == "attack"
         assert req.initial_defenses is None
+        assert req.strategy_name == "pair"
+        assert req.max_turns == 20
+        assert req.max_cost_usd == 10.0
 
     def test_defense_mode_valid(self):
         from adversarial_framework.api.schemas.requests import (
@@ -277,11 +322,16 @@ class TestRequestSchemaValidation:
                 DefenseSelectionItem(name="rule_based"),
                 DefenseSelectionItem(name="ml_guardrails", params={"threshold": 0.5}),
             ],
+            strategy_name="tap",
+            max_turns=15,
+            max_cost_usd=8.0,
         )
         assert req.session_mode == "defense"
         assert len(req.initial_defenses) == 2
         assert req.initial_defenses[0].name == "rule_based"
         assert req.initial_defenses[1].params == {"threshold": 0.5}
+        assert req.strategy_name == "tap"
+        assert req.max_turns == 15
 
     def test_invalid_mode_rejected(self):
         from pydantic import ValidationError
@@ -289,10 +339,50 @@ class TestRequestSchemaValidation:
         from adversarial_framework.api.schemas.requests import StartSessionRequest
 
         with pytest.raises(ValidationError):
-            StartSessionRequest(session_mode="invalid_mode")
+            StartSessionRequest(
+                session_mode="invalid_mode",
+                strategy_name="pair",
+                max_turns=20,
+                max_cost_usd=10.0,
+            )
 
     def test_attack_mode_explicit(self):
         from adversarial_framework.api.schemas.requests import StartSessionRequest
 
-        req = StartSessionRequest(session_mode="attack")
+        req = StartSessionRequest(
+            session_mode="attack",
+            strategy_name="pair",
+            max_turns=20,
+            max_cost_usd=10.0,
+        )
         assert req.session_mode == "attack"
+
+    def test_max_turns_validation(self):
+        """max_turns must be between 1 and 100."""
+        from pydantic import ValidationError
+
+        from adversarial_framework.api.schemas.requests import StartSessionRequest
+
+        with pytest.raises(ValidationError):
+            StartSessionRequest(
+                strategy_name="pair", max_turns=0, max_cost_usd=10.0,
+            )
+        with pytest.raises(ValidationError):
+            StartSessionRequest(
+                strategy_name="pair", max_turns=101, max_cost_usd=10.0,
+            )
+
+    def test_max_cost_validation(self):
+        """max_cost_usd must be between 0 and 500."""
+        from pydantic import ValidationError
+
+        from adversarial_framework.api.schemas.requests import StartSessionRequest
+
+        with pytest.raises(ValidationError):
+            StartSessionRequest(
+                strategy_name="pair", max_turns=20, max_cost_usd=-1.0,
+            )
+        with pytest.raises(ValidationError):
+            StartSessionRequest(
+                strategy_name="pair", max_turns=20, max_cost_usd=501.0,
+            )

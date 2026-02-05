@@ -8,13 +8,11 @@ import {
   Check,
   FlaskConical,
   Loader2,
-  Swords,
   Target,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,16 +33,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateExperiment } from "@/hooks/use-experiments";
-import { useStrategies } from "@/hooks/use-strategies";
 import { useModels } from "@/hooks/use-targets";
-import { ROUTES, CATEGORY_LABELS, CATEGORY_COLORS } from "@/lib/constants";
-import type { CreateExperimentRequest, Strategy } from "@/lib/types";
+import { ROUTES } from "@/lib/constants";
+import type { CreateExperimentRequest } from "@/lib/types";
 
 const STEPS = [
   { label: "Objective", icon: FlaskConical },
   { label: "Target", icon: Target },
   { label: "Agents", icon: Users },
-  { label: "Strategy", icon: Swords },
   { label: "Review", icon: Check },
 ];
 
@@ -58,10 +54,6 @@ const DEFAULT_FORM: CreateExperimentRequest = {
   analyzer_model: "phi4-reasoning:14b",
   defender_model: "qwen3:8b",
   attack_objective: "",
-  strategy_name: "pair",
-  strategy_params: {},
-  max_turns: 20,
-  max_cost_usd: 10.0,
 };
 
 export default function NewExperimentPage() {
@@ -70,11 +62,9 @@ export default function NewExperimentPage() {
   const [form, setForm] = useState<CreateExperimentRequest>(DEFAULT_FORM);
 
   const { data: modelsData } = useModels();
-  const { data: stratData } = useStrategies();
   const createMutation = useCreateExperiment();
 
   const models = modelsData?.models ?? [];
-  const strategies = stratData?.strategies ?? [];
 
   const set = <K extends keyof CreateExperimentRequest>(
     key: K,
@@ -90,8 +80,6 @@ export default function NewExperimentPage() {
       case 2:
         return true;
       case 3:
-        return (form.strategy_name ?? "").trim().length > 0;
-      case 4:
         return true;
       default:
         return false;
@@ -107,10 +95,6 @@ export default function NewExperimentPage() {
       onError: () => toast.error("Failed to create experiment"),
     });
   };
-
-  const selectedStrategy = strategies.find(
-    (s) => s.name === form.strategy_name,
-  );
 
   return (
     <>
@@ -133,13 +117,12 @@ export default function NewExperimentPage() {
                 <button
                   onClick={() => i < step && setStep(i)}
                   disabled={i > step}
-                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                    isActive
+                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${isActive
                       ? "bg-primary text-primary-foreground"
                       : isDone
                         ? "bg-primary/10 text-primary hover:bg-primary/20"
                         : "bg-muted text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{s.label}</span>
@@ -162,7 +145,7 @@ export default function NewExperimentPage() {
                   <Label htmlFor="name">Experiment Name</Label>
                   <Input
                     id="name"
-                    placeholder="e.g., PAIR vs Llama3 Safety"
+                    placeholder="e.g., Llama3 Safety Experiment"
                     value={form.name}
                     onChange={(e) => set("name", e.target.value)}
                   />
@@ -330,64 +313,6 @@ export default function NewExperimentPage() {
 
           {step === 3 && (
             <StepCard
-              title="Select Strategy"
-              description="Choose an attack strategy and configure parameters."
-            >
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {strategies.map((s) => (
-                    <StrategyCard
-                      key={s.name}
-                      strategy={s}
-                      selected={form.strategy_name === s.name}
-                      onClick={() => set("strategy_name", s.name)}
-                    />
-                  ))}
-                  {strategies.length === 0 && (
-                    <p className="col-span-2 text-sm text-muted-foreground text-center py-8">
-                      No strategies loaded. Ensure the backend is running.
-                    </p>
-                  )}
-                </div>
-                <Separator />
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="max_turns">Max Turns</Label>
-                    <Input
-                      id="max_turns"
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={form.max_turns}
-                      onChange={(e) =>
-                        set("max_turns", parseInt(e.target.value) || 20)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max_cost">Max Cost (USD)</Label>
-                    <Input
-                      id="max_cost"
-                      type="number"
-                      min={0}
-                      max={500}
-                      step={0.5}
-                      value={form.max_cost_usd}
-                      onChange={(e) =>
-                        set(
-                          "max_cost_usd",
-                          parseFloat(e.target.value) || 10.0,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </StepCard>
-          )}
-
-          {step === 4 && (
-            <StepCard
               title="Review & Launch"
               description="Verify all settings before creating the experiment."
             >
@@ -413,21 +338,6 @@ export default function NewExperimentPage() {
                 <ReviewRow
                   label="Defender Model"
                   value={form.defender_model ?? ""}
-                />
-                <Separator />
-                <ReviewRow
-                  label="Strategy"
-                  value={
-                    selectedStrategy?.display_name ?? form.strategy_name ?? ""
-                  }
-                />
-                <ReviewRow
-                  label="Max Turns"
-                  value={String(form.max_turns)}
-                />
-                <ReviewRow
-                  label="Budget"
-                  value={`$${form.max_cost_usd?.toFixed(2)}`}
                 />
               </div>
             </StepCard>
@@ -522,43 +432,6 @@ function AgentModelSelector({
         </SelectContent>
       </Select>
     </div>
-  );
-}
-
-function StrategyCard({
-  strategy,
-  selected,
-  onClick,
-}: {
-  strategy: Strategy;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors ${
-        selected
-          ? "border-primary bg-primary/5 ring-1 ring-primary"
-          : "hover:bg-muted/50"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">{strategy.display_name}</span>
-      </div>
-      <Badge
-        variant="outline"
-        className={`w-fit text-[10px] ${CATEGORY_COLORS[strategy.category] ?? ""}`}
-      >
-        {CATEGORY_LABELS[strategy.category] ?? strategy.category}
-      </Badge>
-      <p className="text-xs text-muted-foreground line-clamp-2">
-        {strategy.description}
-      </p>
-      <span className="text-[10px] font-mono text-muted-foreground">
-        ASR: {strategy.estimated_asr}
-      </span>
-    </button>
   );
 }
 

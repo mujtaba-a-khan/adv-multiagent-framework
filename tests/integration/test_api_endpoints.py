@@ -180,6 +180,12 @@ class TestExperimentEndpoints:
 
 
 class TestSessionEndpoints:
+    SESSION_BODY = {
+        "strategy_name": "pair",
+        "max_turns": 20,
+        "max_cost_usd": 10.0,
+    }
+
     @pytest.mark.asyncio
     async def test_create_session(self, client: AsyncClient):
         # Create experiment first
@@ -194,11 +200,65 @@ class TestSessionEndpoints:
         })
         exp_id = exp_resp.json()["id"]
 
-        resp = await client.post(f"/api/v1/experiments/{exp_id}/sessions")
+        resp = await client.post(
+            f"/api/v1/experiments/{exp_id}/sessions",
+            json=self.SESSION_BODY,
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["experiment_id"] == exp_id
         assert data["status"] == "pending"
+        assert data["strategy_name"] == "pair"
+        assert data["max_turns"] == 20
+        assert data["max_cost_usd"] == 10.0
+
+    @pytest.mark.asyncio
+    async def test_create_session_requires_strategy(self, client: AsyncClient):
+        """Creating a session without strategy/budget should fail validation."""
+        exp_resp = await client.post("/api/v1/experiments", json={
+            "name": "Session Validation Test",
+            "target_model": "llama3:8b",
+            "attacker_model": "phi4-reasoning:14b",
+            "analyzer_model": "phi4-reasoning:14b",
+            "defender_model": "qwen3:8b",
+            "attack_objective": "Test",
+            "strategy_name": "pair",
+        })
+        exp_id = exp_resp.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/experiments/{exp_id}/sessions",
+            json={},
+        )
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_create_session_with_different_strategy(self, client: AsyncClient):
+        """Sessions can use different strategies than the experiment default."""
+        exp_resp = await client.post("/api/v1/experiments", json={
+            "name": "Multi-Strategy Test",
+            "target_model": "llama3:8b",
+            "attacker_model": "phi4-reasoning:14b",
+            "analyzer_model": "phi4-reasoning:14b",
+            "defender_model": "qwen3:8b",
+            "attack_objective": "Test",
+            "strategy_name": "pair",
+        })
+        exp_id = exp_resp.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/experiments/{exp_id}/sessions",
+            json={
+                "strategy_name": "tap",
+                "max_turns": 30,
+                "max_cost_usd": 25.0,
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["strategy_name"] == "tap"
+        assert data["max_turns"] == 30
+        assert data["max_cost_usd"] == 25.0
 
     @pytest.mark.asyncio
     async def test_list_sessions(self, client: AsyncClient):
@@ -213,9 +273,15 @@ class TestSessionEndpoints:
         })
         exp_id = exp_resp.json()["id"]
 
-        # Create two sessions
-        await client.post(f"/api/v1/experiments/{exp_id}/sessions")
-        await client.post(f"/api/v1/experiments/{exp_id}/sessions")
+        # Create two sessions with different strategies
+        await client.post(
+            f"/api/v1/experiments/{exp_id}/sessions",
+            json={"strategy_name": "pair", "max_turns": 20, "max_cost_usd": 10.0},
+        )
+        await client.post(
+            f"/api/v1/experiments/{exp_id}/sessions",
+            json={"strategy_name": "tap", "max_turns": 15, "max_cost_usd": 5.0},
+        )
 
         resp = await client.get(f"/api/v1/experiments/{exp_id}/sessions")
         assert resp.status_code == 200

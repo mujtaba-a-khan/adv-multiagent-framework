@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Sequence
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -39,7 +39,7 @@ class SessionRepository:
 
     async def list_by_experiment(
         self, experiment_id: uuid.UUID, offset: int = 0, limit: int = 50
-    ) -> Sequence[Session]:
+    ) -> tuple[Sequence[Session], int]:
         stmt = (
             select(Session)
             .where(Session.experiment_id == experiment_id)
@@ -48,7 +48,16 @@ class SessionRepository:
             .limit(limit)
         )
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        sessions = result.scalars().all()
+
+        count_result = await self.db.execute(
+            select(func.count()).select_from(Session).where(
+                Session.experiment_id == experiment_id
+            )
+        )
+        total = count_result.scalar_one()
+
+        return sessions, total
 
     async def update_status(
         self, session_id: uuid.UUID, status: str

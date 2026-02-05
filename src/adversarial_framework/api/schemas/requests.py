@@ -50,9 +50,13 @@ class DefenseSelectionItem(BaseModel):
 
 
 class StartSessionRequest(BaseModel):
-    """Request body for creating a new session with mode selection."""
+    """Request body for creating a new session with mode, strategy, and budget."""
 
     session_mode: str = Field(default="attack", pattern=r"^(attack|defense)$")
     initial_defenses: list[DefenseSelectionItem] | None = Field(default=None)
-    max_turns: int | None = Field(default=None, ge=1, le=100)
-    max_cost_usd: float | None = Field(default=None, ge=0.0, le=500.0)
+
+    # Strategy and budget (required — user selects at launch time)
+    strategy_name: str = Field(..., min_length=1, max_length=64)
+    strategy_params: dict = Field(default_factory=dict)
+    max_turns: int = Field(..., ge=1, le=100)
+    max_cost_usd: float = Field(..., ge=0.0, le=500.0)
