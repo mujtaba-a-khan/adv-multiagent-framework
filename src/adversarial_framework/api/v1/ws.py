@@ -31,6 +31,52 @@ async def broadcast(session_id: str, message: dict) -> None:
         clients.remove(ws)
 
 
+# Fine-tuning connections (separate registry)
+
+_ft_connections: dict[str, list[WebSocket]] = {}
+
+
+async def broadcast_finetuning(job_id: str, message: dict) -> None:
+    """Send a message to all WebSocket clients watching a fine-tuning job."""
+    clients = _ft_connections.get(job_id, [])
+    disconnected: list[WebSocket] = []
+    for ws in clients:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            disconnected.append(ws)
+    for ws in disconnected:
+        clients.remove(ws)
+
+
+@router.websocket("/ws/finetuning/{job_id}")
+async def ws_finetuning(websocket: WebSocket, job_id: str) -> None:
+    """WebSocket endpoint for live fine-tuning progress updates."""
+    await websocket.accept()
+
+    if job_id not in _ft_connections:
+        _ft_connections[job_id] = []
+    _ft_connections[job_id].append(websocket)
+
+    logger.info("ft_ws_connected", job_id=job_id)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        logger.info("ft_ws_disconnected", job_id=job_id)
+    finally:
+        if job_id in _ft_connections:
+            try:
+                _ft_connections[job_id].remove(websocket)
+            except ValueError:
+                pass
+            if not _ft_connections[job_id]:
+                del _ft_connections[job_id]
+
+
+# Session connections
+
 @router.websocket("/ws/{session_id}")
 async def ws_session(websocket: WebSocket, session_id: str) -> None:
     """WebSocket endpoint for live session updates.

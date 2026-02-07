@@ -236,6 +236,69 @@ class VulnerabilityCatalog(Base):
     severity_default: Mapped[float] = mapped_column(Float, default=5.0)
 
 
+# Fine-Tuning Jobs
+
+class FineTuningJob(Base):
+    """A model fine-tuning or abliteration job."""
+
+    __tablename__ = "finetuning_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    # Job identity
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    job_type: Mapped[str] = mapped_column(
+        String(32), nullable=False
+    )  # "pull_abliterated" | "abliterate" | "sft"
+
+    # Source and output
+    source_model: Mapped[str] = mapped_column(String(255), nullable=False)
+    output_model_name: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )
+
+    # Job configuration (type-specific params stored as JSON)
+    config: Mapped[dict] = mapped_column(JSON, default=dict)
+
+    # Status tracking
+    status: Mapped[str] = mapped_column(
+        String(32), default="pending"
+    )  # pending | running | completed | failed | cancelled
+    progress_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    current_step: Mapped[str | None] = mapped_column(
+        String(255), nullable=True
+    )
+
+    # Logs (append-only JSON array of log entries)
+    logs: Mapped[list] = mapped_column(JSON, default=list)
+
+    # Error info
+    error_message: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+
+    # Resource tracking
+    peak_memory_gb: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+    total_duration_seconds: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+
+    # Timestamps
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
 # ── Session Reports ──────────────────────────────────────────────────────────
 
 

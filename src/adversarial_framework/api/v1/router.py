@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from adversarial_framework.api.v1.comparisons import router as comparisons_router
 from adversarial_framework.api.v1.defenses import router as defenses_router
 from adversarial_framework.api.v1.experiments import router as experiments_router
+from adversarial_framework.api.v1.finetuning import router as finetuning_router
 from adversarial_framework.api.v1.sessions import router as sessions_router
 from adversarial_framework.api.v1.strategies import router as strategies_router
 from adversarial_framework.api.v1.targets import router as targets_router
@@ -22,4 +23,5 @@ v1_router.include_router(turns_router, prefix="/sessions", tags=["Turns"])
 v1_router.include_router(strategies_router, prefix="/strategies", tags=["Strategies"])
 v1_router.include_router(defenses_router, prefix="/defenses", tags=["Defenses"])
 v1_router.include_router(targets_router, prefix="/targets", tags=["Targets"])
+v1_router.include_router(finetuning_router, prefix="/finetuning", tags=["Fine-Tuning"])
 v1_router.include_router(ws_router, tags=["WebSocket"])

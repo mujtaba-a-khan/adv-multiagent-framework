@@ -1,6 +1,6 @@
 [project]
 name = "adversarial-framework"
-version = "0.1.0"
+version = "0.2"
 description = "Adversarial Multi-Agent Framework for AI Safety — Red teaming LLMs with LangGraph"
 readme = "README.md"
 license = { text = "MIT" }
@@ -35,6 +35,14 @@ dependencies = [
     "cryptography>=44.0",
     "click>=8.1",
     "langgraph-checkpoint-postgres>=3.0.3",
+]
+
+[project.optional-dependencies]
+finetuning = [
+    "transformers>=4.40",
+    "torch>=2.2",
+    "accelerate>=0.30",
+    "psutil>=6.0",
 ]
 
 [project.scripts]

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from adversarial_framework.db.engine import get_session_factory
 from adversarial_framework.db.repositories.experiments import ExperimentRepository
+from adversarial_framework.db.repositories.finetuning import FineTuningJobRepository
 from adversarial_framework.db.repositories.sessions import SessionRepository
 from adversarial_framework.db.repositories.turns import TurnRepository
 from adversarial_framework.agents.target.providers.ollama import OllamaProvider
@@ -43,6 +44,12 @@ def get_turn_repo(
     session: AsyncSession = Depends(get_db),
 ) -> TurnRepository:
     return TurnRepository(session)
+
+
+def get_finetuning_repo(
+    session: AsyncSession = Depends(get_db),
+) -> FineTuningJobRepository:
+    return FineTuningJobRepository(session)
 
 
 def get_ollama_provider(

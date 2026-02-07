@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   Swords,
+  Wrench,
 } from "lucide-react";
 import {
   Sidebar,
@@ -59,6 +60,11 @@ const NAV_ITEMS = [
   {
     label: "Configuration",
     items: [
+      {
+        title: "Model Workshop",
+        href: ROUTES.workshop.list,
+        icon: Wrench,
+      },
       {
         title: "Targets & Models",
         href: ROUTES.targets,

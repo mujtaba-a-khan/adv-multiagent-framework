@@ -162,6 +162,34 @@ class SessionComparisonResponse(BaseModel):
     defense_turns: list[TurnResponse]
 
 
+# Fine-Tuning Jobs
+
+class FineTuningJobResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    job_type: str
+    source_model: str
+    output_model_name: str
+    config: dict
+    status: str
+    progress_pct: float
+    current_step: str | None
+    logs: list
+    error_message: str | None
+    peak_memory_gb: float | None
+    total_duration_seconds: float | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    created_at: datetime
+
+
+class FineTuningJobListResponse(BaseModel):
+    jobs: list[FineTuningJobResponse]
+    total: int
+
+
 # WebSocket Messages
 class WSMessage(BaseModel):
     """WebSocket message pushed to clients during live sessions."""

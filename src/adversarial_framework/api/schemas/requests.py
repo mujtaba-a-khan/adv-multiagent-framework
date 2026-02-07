@@ -70,3 +70,17 @@ class StartSessionRequest(BaseModel):
             "prompt. When False, uses the original single-call pattern."
         ),
     )
+
+
+class CreateFineTuningJobRequest(BaseModel):
+    """Request body for creating a fine-tuning or abliteration job."""
+
+    name: str = Field(..., min_length=1, max_length=255)
+    job_type: str = Field(
+        ..., pattern=r"^(pull_abliterated|abliterate|sft)$"
+    )
+    source_model: str = Field(..., min_length=1, max_length=255)
+    output_model_name: str = Field(
+        ..., min_length=1, max_length=255
+    )
+    config: dict = Field(default_factory=dict)
