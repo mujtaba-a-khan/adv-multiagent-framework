@@ -133,6 +133,10 @@ class AutoDANStrategy(BaseAttackStrategy):
                 "mutation_type": "initial",
                 "num_fragments": num_fragments,
             },
+            reasoning=(
+                f"AutoDAN initial generation: combined {num_fragments} template fragments via"
+                " genetic seeding"
+            ),
             token_usage=0,
         )
 
@@ -174,5 +178,9 @@ class AutoDANStrategy(BaseAttackStrategy):
                 "mutation_rate": mutation_rate,
                 "crossover_rate": crossover_rate,
             },
+            reasoning=(
+                f"AutoDAN genetic mutation: synonym replacement (rate={mutation_rate}),"
+                f" crossover (rate={crossover_rate}), sentence reordering"
+            ),
             token_usage=0,
         )

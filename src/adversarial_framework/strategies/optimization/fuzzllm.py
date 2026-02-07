@@ -137,6 +137,10 @@ class FuzzLLMStrategy(BaseAttackStrategy):
                 "components": components,
                 "seed": seed,
             },
+            reasoning=(
+                "FuzzLLM: generated prompt from fuzzed components —"
+                f" persona='{components['persona']}', action='{components['action']}'"
+            ),
             token_usage=0,
         )
 
@@ -160,5 +164,9 @@ class FuzzLLMStrategy(BaseAttackStrategy):
                 "components": components,
                 "refinement": True,
             },
+            reasoning=(
+                f"FuzzLLM iteration {iteration}: re-fuzzed with new random component"
+                " combination"
+            ),
             token_usage=0,
         )

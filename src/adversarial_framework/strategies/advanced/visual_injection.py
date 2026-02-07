@@ -135,6 +135,10 @@ class VisualInjectionStrategy(BaseAttackStrategy):
                 "visual_mode": self._MODES[self._mode_index],
                 "iteration": 0,
             },
+            reasoning=(
+                f"Visual injection: using '{self._MODES[self._mode_index]}' mode to embed"
+                " instructions in visual formatting"
+            ),
             token_usage=0,
         )
 
@@ -163,6 +167,10 @@ class VisualInjectionStrategy(BaseAttackStrategy):
                 "visual_mode": mode,
                 "iteration": next_idx,
             },
+            reasoning=(
+                f"Visual injection: switching to '{mode}' mode after '{current_mode}' was"
+                " ineffective"
+            ),
             token_usage=0,
         )
 

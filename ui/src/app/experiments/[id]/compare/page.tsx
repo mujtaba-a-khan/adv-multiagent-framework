@@ -285,6 +285,16 @@ function TurnCard({
             {turn.attack_prompt}
           </span>
         </div>
+        {turn.attacker_reasoning && (
+          <details className="rounded-md border border-dashed border-purple-500/20 bg-purple-500/5 p-2">
+            <summary className="cursor-pointer text-[10px] font-medium text-purple-600 dark:text-purple-400">
+              View Attacker Thinking
+            </summary>
+            <p className="mt-1 whitespace-pre-wrap text-[11px] text-muted-foreground">
+              {turn.attacker_reasoning}
+            </p>
+          </details>
+        )}
         <div>
           <span className="font-medium text-muted-foreground">Response: </span>
           <span className={expanded ? "whitespace-pre-wrap" : "line-clamp-3"}>

@@ -7,6 +7,7 @@ export interface PendingTurn {
   turn_number: number;
   strategy_name?: string;
   attack_prompt?: string;
+  attacker_reasoning?: string | null;
   target_response?: string;
   raw_target_response?: string | null;
   target_blocked?: boolean;
@@ -62,6 +63,8 @@ export const useWSStore = create<WSStore>((set, get) => ({
               ? {
                   ...state.pendingTurn,
                   attack_prompt: (msg.data?.attack_prompt as string) ?? "",
+                  attacker_reasoning:
+                    (msg.data?.attacker_reasoning as string | null) ?? null,
                   strategy_name: (msg.data?.strategy_name as string) ?? "",
                   is_baseline: (msg.data?.is_baseline as boolean) ?? false,
                 }

@@ -112,6 +112,7 @@ class PromptHijackingStrategy(BaseAttackStrategy):
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"vector": name, "iteration": 0},
+            reasoning=f"Using '{name}' injection vector to override system instructions",
             token_usage=0,
         )
 
@@ -134,8 +135,21 @@ class PromptHijackingStrategy(BaseAttackStrategy):
         name, template = _HIJACK_TEMPLATES[next_idx]
         prompt = template.format(objective=objective)
 
+        prev_verdict = params.get("_previous_verdict", "refused")
+        if prev_verdict == "jailbreak":
+            reason_suffix = (
+                f"'{current_vector}' succeeded — trying"
+                " alternative injection vector"
+            )
+        else:
+            reason_suffix = f"'{current_vector}' was detected"
+
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"vector": name},
+            reasoning=(
+                f"Cycling to '{name}' injection vector:"
+                f" {reason_suffix}"
+            ),
             token_usage=0,
         )

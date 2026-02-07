@@ -60,3 +60,13 @@ class StartSessionRequest(BaseModel):
     strategy_params: dict = Field(default_factory=dict)
     max_turns: int = Field(..., ge=1, le=100)
     max_cost_usd: float = Field(..., ge=0.0, le=500.0)
+
+    # Reasoning separation toggle
+    separate_reasoning: bool = Field(
+        default=True,
+        description=(
+            "When True, LLM-based strategies use a two-call pattern "
+            "(think + attack) to separate reasoning from the clean "
+            "prompt. When False, uses the original single-call pattern."
+        ),
+    )

@@ -100,6 +100,11 @@ class MasterKeyStrategy(BaseAttackStrategy):
                 "template_index": self._template_index,
                 "iteration": 0,
             },
+            reasoning=(
+                f"MASTERKEY: using universal jailbreak"
+                f" template {self._template_index + 1}"
+                f"/{len(_MASTERKEY_TEMPLATES)}"
+            ),
             token_usage=0,
         )
 
@@ -126,5 +131,9 @@ class MasterKeyStrategy(BaseAttackStrategy):
                 "iteration": next_idx,
                 "previous_failed": True,
             },
+            reasoning=(
+                f"MASTERKEY: cycling to template {next_idx + 1}/{len(_MASTERKEY_TEMPLATES)}"
+                f" after template {current_idx + 1} failed"
+            ),
             token_usage=0,
         )

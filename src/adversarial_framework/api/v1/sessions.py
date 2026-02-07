@@ -85,12 +85,16 @@ async def create_session(
         if body.initial_defenses
         else []
     )
+    # Merge separate_reasoning into strategy_params for DB storage
+    strategy_params = dict(body.strategy_params)
+    strategy_params["separate_reasoning"] = body.separate_reasoning
+
     session = await session_repo.create(
         experiment_id=experiment_id,
         session_mode=body.session_mode,
         initial_defenses=initial_defenses,
         strategy_name=body.strategy_name,
-        strategy_params=body.strategy_params,
+        strategy_params=strategy_params,
         max_turns=body.max_turns,
         max_cost_usd=body.max_cost_usd,
     )
@@ -250,6 +254,7 @@ def _turn_to_ws_payload(turn: object, db_id: str, sid: str) -> dict:
         "strategy_name": turn.strategy_name,
         "strategy_params": turn.strategy_params,
         "attack_prompt": turn.attack_prompt,
+        "attacker_reasoning": getattr(turn, "attacker_reasoning", None),
         "target_response": turn.target_response,
         "raw_target_response": getattr(turn, "raw_target_response", None),
         "target_blocked": turn.target_blocked,
@@ -286,6 +291,7 @@ async def _persist_turn_and_metrics(
             strategy_name=turn.strategy_name,
             strategy_params=turn.strategy_params,
             attack_prompt=turn.attack_prompt,
+            attacker_reasoning=getattr(turn, "attacker_reasoning", None),
             target_response=turn.target_response,
             raw_target_response=getattr(turn, "raw_target_response", None),
             target_blocked=turn.target_blocked,
@@ -359,11 +365,13 @@ def _build_initial_state(
         "strategy_params": None,
         "planning_notes": None,
         "current_attack_prompt": None,
+        "attacker_reasoning": None,
         "target_response": None,
         "raw_target_response": None,
         "target_blocked": False,
         "judge_verdict": None,
         "judge_confidence": None,
+        "judge_reason": None,
         "severity_score": None,
         "specificity_score": None,
         "coherence_score": None,
@@ -505,6 +513,7 @@ async def _on_attacker(
             "turn_number": turn_num,
             "data": {
                 "attack_prompt": prompt,
+                "attacker_reasoning": update.get("attacker_reasoning"),
                 "strategy_name": update.get("selected_strategy", ""),
                 "is_baseline": turn_num == 1,
             },

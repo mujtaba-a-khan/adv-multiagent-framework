@@ -125,6 +125,10 @@ class CrescendoStrategy(BaseAttackStrategy):
                 "topic": topic,
                 "iteration": 0,
             },
+            reasoning=(
+                f"Crescendo: starting at escalation level 0/{len(_ESCALATION_TEMPLATES) - 1}"
+                f" (innocent) with topic '{topic}'"
+            ),
             token_usage=0,
         )
 
@@ -167,5 +171,9 @@ class CrescendoStrategy(BaseAttackStrategy):
                 "escalation_level": next_level,
                 "topic": topic,
             },
+            reasoning=(
+                f"Crescendo: escalating from level {current_level} to"
+                f" {next_level}/{len(_ESCALATION_TEMPLATES) - 1} (rate={escalation_rate})"
+            ),
             token_usage=0,
         )

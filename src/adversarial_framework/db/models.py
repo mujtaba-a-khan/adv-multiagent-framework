@@ -160,6 +160,7 @@ class Turn(Base):
 
     # Attack
     attack_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    attacker_reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Target response
     target_response: Mapped[str] = mapped_column(Text, nullable=False)

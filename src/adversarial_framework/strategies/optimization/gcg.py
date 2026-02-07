@@ -91,6 +91,10 @@ class GCGStrategy(BaseAttackStrategy):
                 "iteration": self._iteration,
                 "mode": "black_box_init",
             },
+            reasoning=(
+                f"Generating initial random adversarial suffix ({suffix_length} chars) for"
+                " black-box GCG attack"
+            ),
             token_usage=0,
         )
 
@@ -127,5 +131,9 @@ class GCGStrategy(BaseAttackStrategy):
                 "num_candidates": num_candidates,
                 "mode": "black_box_mutation",
             },
+            reasoning=(
+                f"GCG iteration {iteration}: mutated suffix from {num_candidates} candidates"
+                f" (mutation_rate={mutation_rate})"
+            ),
             token_usage=0,
         )

@@ -230,3 +230,6 @@ node_modules
 docs
 notebooks
 prompt_templates
+
+#Test Suite
+tests/

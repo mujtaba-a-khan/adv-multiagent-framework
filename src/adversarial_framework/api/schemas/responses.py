@@ -82,6 +82,7 @@ class TurnResponse(BaseModel):
     strategy_name: str
     strategy_params: dict
     attack_prompt: str
+    attacker_reasoning: str | None
     target_response: str
     raw_target_response: str | None
     target_blocked: bool

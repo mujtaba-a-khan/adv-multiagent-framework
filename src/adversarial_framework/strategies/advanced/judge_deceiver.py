@@ -98,6 +98,11 @@ class JudgeDeceiverStrategy(BaseAttackStrategy):
                 "attack_target": "judge",
                 "iteration": 0,
             },
+            reasoning=(
+                f"JudgeDeceiver: using evaluation-framing"
+                f" template {self._template_index + 1}"
+                f"/{len(_DECEIVER_TEMPLATES)} to mislead safety judges"
+            ),
             token_usage=0,
         )
 
@@ -122,5 +127,9 @@ class JudgeDeceiverStrategy(BaseAttackStrategy):
                 "attack_target": "judge",
                 "iteration": next_idx,
             },
+            reasoning=(
+                f"JudgeDeceiver: cycling to template {next_idx + 1}/{len(_DECEIVER_TEMPLATES)}"
+                f" after template {current_idx + 1} was detected"
+            ),
             token_usage=0,
         )

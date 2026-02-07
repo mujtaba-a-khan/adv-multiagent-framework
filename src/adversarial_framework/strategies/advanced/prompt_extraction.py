@@ -20,7 +20,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 _EXTRACTION_TEMPLATES = [
     # 1. Direct ask
     (
@@ -114,21 +113,29 @@ class PromptExtractionStrategy(BaseAttackStrategy):
         template = _EXTRACTION_TEMPLATES[idx]
         prompt = template.format(objective=objective)
 
+        technique_name = [
+            "direct_ask",
+            "translation_trick",
+            "completion",
+            "summarize",
+            "repeat_after_me",
+            "formatting_trick",
+        ][idx]
+
         return AttackResult(
             prompt=prompt,
             strategy_metadata={
                 "template_index": idx,
-                "technique": [
-                    "direct_ask",
-                    "translation_trick",
-                    "completion",
-                    "summarize",
-                    "repeat_after_me",
-                    "formatting_trick",
-                ][idx],
+                "technique": technique_name,
                 "_used_indices": [idx],
                 "iteration": 0,
             },
+            reasoning=(
+                f"Prompt extraction: using '{technique_name}'"
+                f" technique (template {idx + 1}"
+                f"/{len(_EXTRACTION_TEMPLATES)})"
+                " to elicit system prompt"
+            ),
             token_usage=0,
         )
 
@@ -174,5 +181,10 @@ class PromptExtractionStrategy(BaseAttackStrategy):
                 "_used_indices": used_indices,
                 "iteration": len(used_indices) - 1,
             },
+            reasoning=(
+                f"Prompt extraction: switching to '{technique_names[idx]}' technique"
+                f" ({len(used_indices)}/{len(_EXTRACTION_TEMPLATES)} tried) after previous"
+                " attempts failed"
+            ),
             token_usage=0,
         )

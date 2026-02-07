@@ -185,6 +185,10 @@ class KnowledgeDrivenStrategy(BaseAttackStrategy):
                 "followup_level": 0,
                 "iteration": 0,
             },
+            reasoning=(
+                f"Knowledge-driven: opening as '{params.get('expertise_level', 'expert')}' in"
+                f" '{domain}' domain to establish credibility"
+            ),
             token_usage=0,
         )
 
@@ -228,5 +232,9 @@ class KnowledgeDrivenStrategy(BaseAttackStrategy):
                 "expertise_level": expertise_level,
                 "followup_level": next_level,
             },
+            reasoning=(
+                f"Knowledge-driven: follow-up level {next_level}/{len(_FOLLOWUP_TEMPLATES) - 1}"
+                f" as '{expertise_level}' — requesting more specific details"
+            ),
             token_usage=0,
         )

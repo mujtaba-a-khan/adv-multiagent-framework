@@ -9,8 +9,14 @@ import pytest
 
 from adversarial_framework.core.constants import AttackCategory
 from adversarial_framework.strategies.prompt_level.encoding import EncodingStrategy
-from adversarial_framework.strategies.prompt_level.roleplay import RoleplayStrategy
 from adversarial_framework.strategies.prompt_level.logic_trap import LogicTrapStrategy
+from adversarial_framework.strategies.prompt_level.persuasion import (
+    PersuasionStrategy,
+)
+from adversarial_framework.strategies.prompt_level.prompt_hijacking import (
+    PromptHijackingStrategy,
+)
+from adversarial_framework.strategies.prompt_level.roleplay import RoleplayStrategy
 
 
 class TestEncodingStrategy:
@@ -150,3 +156,124 @@ class TestLogicTrapStrategy:
         )
         # Should wrap around: 3 → 0
         assert result.strategy_metadata["template_index"] == 0
+
+
+class TestVerdictAwareReasoning:
+    """Template strategies produce verdict-aware reasoning in refine()."""
+
+    @pytest.mark.asyncio
+    async def test_roleplay_jailbreak_reasoning(self):
+        strategy = RoleplayStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="here is the info",
+            judge_feedback="Verdict: jailbreak",
+            params={
+                "persona_index": 0,
+                "_previous_verdict": "jailbreak",
+            },
+        )
+        assert "succeeded" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_roleplay_refused_reasoning(self):
+        strategy = RoleplayStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="I cannot",
+            judge_feedback="Verdict: refused",
+            params={
+                "persona_index": 0,
+                "_previous_verdict": "refused",
+            },
+        )
+        assert "unsuccessful" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_roleplay_default_verdict_is_refused(self):
+        strategy = RoleplayStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="I cannot",
+            judge_feedback="Verdict: refused",
+            params={"persona_index": 0},
+        )
+        assert "unsuccessful" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_encoding_jailbreak_reasoning(self):
+        strategy = EncodingStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="here",
+            judge_feedback="Verdict: jailbreak",
+            params={
+                "encoding_type": "base64",
+                "_previous_verdict": "jailbreak",
+            },
+        )
+        assert "succeeded" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_encoding_refused_reasoning(self):
+        strategy = EncodingStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="no",
+            judge_feedback="Verdict: refused",
+            params={
+                "encoding_type": "base64",
+                "_previous_verdict": "refused",
+            },
+        )
+        assert "unsuccessful" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_logic_trap_jailbreak_reasoning(self):
+        strategy = LogicTrapStrategy()
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="here",
+            judge_feedback="Verdict: jailbreak",
+            params={
+                "template_index": 0,
+                "_previous_verdict": "jailbreak",
+            },
+        )
+        assert "succeeded" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_persuasion_jailbreak_reasoning(self):
+        strategy = PersuasionStrategy(provider=None)
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="here",
+            judge_feedback="Verdict: jailbreak",
+            params={
+                "technique": "authority",
+                "_previous_verdict": "jailbreak",
+            },
+        )
+        assert "succeeded" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_prompt_hijacking_jailbreak_reasoning(self):
+        strategy = PromptHijackingStrategy(provider=None)
+        result = await strategy.refine(
+            objective="test",
+            previous_prompt="old",
+            target_response="here",
+            judge_feedback="Verdict: jailbreak",
+            params={
+                "vector": "separator_override",
+                "_previous_verdict": "jailbreak",
+            },
+        )
+        assert "succeeded" in result.reasoning

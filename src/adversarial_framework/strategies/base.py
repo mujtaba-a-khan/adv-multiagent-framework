@@ -32,6 +32,7 @@ class AttackResult:
 
     prompt: str
     strategy_metadata: dict[str, Any]
+    reasoning: str | None = None
     token_usage: int = 0
     auxiliary_prompts: list[str] | None = None
 

@@ -88,6 +88,7 @@ async def _run_session(
         "strategy_params": None,
         "planning_notes": None,
         "current_attack_prompt": None,
+        "attacker_reasoning": None,
         "target_response": None,
         "target_blocked": False,
         "judge_verdict": None,

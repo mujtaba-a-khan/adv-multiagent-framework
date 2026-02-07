@@ -94,6 +94,10 @@ class LogicTrapStrategy(BaseAttackStrategy):
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"template_index": idx, "iteration": 0},
+            reasoning=(
+                f"Using logic trap template {idx + 1}/{len(_LOGIC_TEMPLATES)} with hypothetical"
+                " reasoning framing"
+            ),
             token_usage=0,
         )
 
@@ -113,8 +117,22 @@ class LogicTrapStrategy(BaseAttackStrategy):
         template = _LOGIC_TEMPLATES[next_idx]
         prompt = template.format(objective=objective)
 
+        prev_verdict = params.get("_previous_verdict", "refused")
+        if prev_verdict == "jailbreak":
+            reason_suffix = (
+                "previous framing succeeded — trying alternative"
+                " logic vector"
+            )
+        else:
+            reason_suffix = "previous framing was unsuccessful"
+
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"template_index": next_idx},
+            reasoning=(
+                f"Cycling to logic trap template"
+                f" {next_idx + 1}/{len(_LOGIC_TEMPLATES)}:"
+                f" {reason_suffix}"
+            ),
             token_usage=0,
         )

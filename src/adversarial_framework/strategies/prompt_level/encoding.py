@@ -103,6 +103,7 @@ class EncodingStrategy(BaseAttackStrategy):
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"encoding_type": enc_type, "iteration": 0},
+            reasoning=f"Encoding objective with {enc_type} to bypass keyword-based filters",
             token_usage=0,
         )
 
@@ -136,8 +137,23 @@ class EncodingStrategy(BaseAttackStrategy):
         encoded = encoder(framed_objective)
         prompt = wrapper.format(encoded=encoded)
 
+        prev_verdict = params.get("_previous_verdict", "refused")
+        if prev_verdict == "jailbreak":
+            reason_suffix = (
+                f"{current_type} succeeded — trying alternative"
+                " encoding vector"
+            )
+        else:
+            reason_suffix = (
+                f"{current_type} was unsuccessful"
+            )
+
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"encoding_type": next_type},
+            reasoning=(
+                f"Switching to {next_type} encoding with creative"
+                f" writing framing: {reason_suffix}"
+            ),
             token_usage=0,
         )

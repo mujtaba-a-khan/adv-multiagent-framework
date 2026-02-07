@@ -104,6 +104,10 @@ class JailMineStrategy(BaseAttackStrategy):
                 "mined_tokens": dict(self._mined_tokens),
                 "phase": "initial_mining",
             },
+            reasoning=(
+                "JailMine: initial token mining phase — random framing, intensifier, and"
+                " instruction tokens selected"
+            ),
             token_usage=0,
         )
 
@@ -144,5 +148,9 @@ class JailMineStrategy(BaseAttackStrategy):
                 "mutated_category": category,
                 "phase": "mining",
             },
+            reasoning=(
+                f"JailMine iteration {iteration}: substituted '{category}' token to"
+                f" '{mined_tokens[category]}'"
+            ),
             token_usage=0,
         )

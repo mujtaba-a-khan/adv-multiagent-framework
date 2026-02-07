@@ -37,6 +37,7 @@ class AttackTurn:
     target_tokens: int
     analyzer_tokens: int
     raw_target_response: str | None = None
+    attacker_reasoning: str | None = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 @dataclass(frozen=True)
@@ -126,6 +127,7 @@ class AdversarialState(TypedDict):
     strategy_params: Annotated[dict[str, Any] | None, latest]
     planning_notes: Annotated[str | None, latest]
     current_attack_prompt: Annotated[str | None, latest]
+    attacker_reasoning: Annotated[str | None, latest]
     target_response: Annotated[str | None, latest]
     target_blocked: Annotated[bool, latest]
     raw_target_response: Annotated[str | None, latest]
@@ -133,6 +135,7 @@ class AdversarialState(TypedDict):
     # Analysis Results (current turn)
     judge_verdict: Annotated[JudgeVerdict | None, latest]
     judge_confidence: Annotated[float | None, latest]
+    judge_reason: Annotated[str | None, latest]
     severity_score: Annotated[float | None, latest]
     specificity_score: Annotated[float | None, latest]
     coherence_score: Annotated[float | None, latest]

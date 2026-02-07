@@ -92,6 +92,11 @@ class LogToLeakStrategy(BaseAttackStrategy):
                 "attack_type": "tool_exploitation",
                 "iteration": 0,
             },
+            reasoning=(
+                f"Log-to-Leak: exploiting tool-calling"
+                f" via template {self._template_index + 1}"
+                f"/{len(_LEAK_TEMPLATES)}"
+            ),
             token_usage=0,
         )
 
@@ -116,5 +121,9 @@ class LogToLeakStrategy(BaseAttackStrategy):
                 "attack_type": "tool_exploitation",
                 "iteration": next_idx,
             },
+            reasoning=(
+                f"Log-to-Leak: cycling to template {next_idx + 1}/{len(_LEAK_TEMPLATES)} for"
+                " different tool exploitation vector"
+            ),
             token_usage=0,
         )

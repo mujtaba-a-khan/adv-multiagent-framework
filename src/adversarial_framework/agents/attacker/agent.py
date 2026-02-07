@@ -61,6 +61,7 @@ class AttackerAgent(BaseAgent):
             )
             return {
                 "current_attack_prompt": None,
+                "attacker_reasoning": None,
                 "last_error": f"Strategy '{strategy_name}' not found. Available: {available}",
                 "error_count": 1,
             }
@@ -105,13 +106,22 @@ class AttackerAgent(BaseAgent):
                 target_response = state.get("target_response", "")
                 verdict = state.get("judge_verdict", JudgeVerdict.REFUSED)
                 confidence = state.get("judge_confidence", 0.0)
-                judge_feedback = (
-                    f"Verdict: {verdict.value if isinstance(verdict, JudgeVerdict) else verdict}, "
-                    f"Confidence: {confidence}"
-                )
+                judge_reason = state.get("judge_reason")
+                fb_parts = [
+                    f"Verdict: {verdict.value if isinstance(verdict, JudgeVerdict) else verdict}",
+                    f"Confidence: {confidence}",
+                ]
+                if judge_reason:
+                    fb_parts.append(f"Reason: {judge_reason}")
+                judge_feedback = ", ".join(fb_parts)
 
                 # Include attack history so strategies can avoid repetition
                 strategy_params["_attack_history"] = attack_history
+                strategy_params["_previous_verdict"] = (
+                    verdict.value
+                    if isinstance(verdict, JudgeVerdict)
+                    else str(verdict)
+                )
 
                 logger.info(
                     "attacker_refine",
@@ -131,6 +141,7 @@ class AttackerAgent(BaseAgent):
             logger.error("attacker_error", error=str(exc), strategy=strategy_name)
             return {
                 "current_attack_prompt": None,
+                "attacker_reasoning": None,
                 "last_error": f"Attacker error: {exc}",
                 "error_count": 1,
             }
@@ -155,9 +166,15 @@ class AttackerAgent(BaseAgent):
         """Remove non-serializable keys before writing to state — these are
             only needed during the refine() call, not for DB persistence."""
         strategy_params.pop("_attack_history", None)
+        strategy_params.pop("_previous_verdict", None)
 
         return {
             "current_attack_prompt": result.prompt,
+            "attacker_reasoning": (
+                result.reasoning
+                if strategy_params.get("separate_reasoning", True)
+                else None
+            ),
             "selected_strategy": strategy_name,
             "strategy_params": strategy_params,
             "strategy_metadata": updated_metadata,

@@ -18,7 +18,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 _FLIP_MODES = ["word_reverse", "sentence_reverse", "char_reverse"]
 
 _DECODE_INSTRUCTIONS: dict[str, str] = {
@@ -121,6 +120,10 @@ class FlipAttackStrategy(BaseAttackStrategy):
                 "encoded_text": encoded,
                 "iteration": 0,
             },
+            reasoning=(
+                f"FlipAttack: applying '{mode}' character reordering to"
+                " bypass keyword filters"
+            ),
             token_usage=0,
         )
 
@@ -155,5 +158,9 @@ class FlipAttackStrategy(BaseAttackStrategy):
                 "encoded_text": encoded,
                 "iteration": next_idx,
             },
+            reasoning=(
+                f"FlipAttack: switching to '{mode}' reordering after '{current_mode}' was"
+                " decoded/blocked"
+            ),
             token_usage=0,
         )

@@ -73,6 +73,7 @@ export default function ExperimentDetailPage() {
     strategyName: string,
     maxTurns: number,
     maxCostUsd: number,
+    separateReasoning: boolean,
   ) => {
     createSession.mutate(
       {
@@ -81,6 +82,7 @@ export default function ExperimentDetailPage() {
         strategy_name: strategyName,
         max_turns: maxTurns,
         max_cost_usd: maxCostUsd,
+        separate_reasoning: separateReasoning,
       },
       {
         onSuccess: (session) => {

@@ -107,6 +107,10 @@ class PDFInjectionStrategy(BaseAttackStrategy):
                 "injection_mode": self._mode_keys[self._mode_index],
                 "iteration": 0,
             },
+            reasoning=(
+                f"PDF injection: using '{self._mode_keys[self._mode_index]}' injection mode to"
+                " embed adversarial content in simulated PDF structure"
+            ),
             token_usage=0,
         )
 
@@ -136,5 +140,9 @@ class PDFInjectionStrategy(BaseAttackStrategy):
                 "injection_mode": mode_keys[next_idx],
                 "iteration": next_idx,
             },
+            reasoning=(
+                f"PDF injection: switching to '{mode_keys[next_idx]}' mode after"
+                f" '{current_mode}' failed"
+            ),
             token_usage=0,
         )

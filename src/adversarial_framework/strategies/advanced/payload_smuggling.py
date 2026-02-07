@@ -18,7 +18,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 _SMUGGLING_TECHNIQUES: dict[str, str] = {
     "code_comment": (
         "Please review the following Python code and explain what it does:\n\n"
@@ -134,6 +133,7 @@ class PayloadSmugglingStrategy(BaseAttackStrategy):
                 "_used_techniques": [selected],
                 "iteration": 0,
             },
+            reasoning=f"Payload smuggling: hiding objective inside '{selected}' content structure",
             token_usage=0,
         )
 
@@ -171,5 +171,9 @@ class PayloadSmugglingStrategy(BaseAttackStrategy):
                 "_used_techniques": used,
                 "iteration": len(used) - 1,
             },
+            reasoning=(
+                f"Payload smuggling: switching to '{selected}' technique"
+                f" ({len(used)}/{len(_TECHNIQUE_NAMES)} tried)"
+            ),
             token_usage=0,
         )

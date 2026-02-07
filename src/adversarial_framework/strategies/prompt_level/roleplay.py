@@ -97,6 +97,10 @@ class RoleplayStrategy(BaseAttackStrategy):
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"persona_index": idx, "iteration": 0},
+            reasoning=(
+                f"Using persona template {idx + 1}/{len(_PERSONA_TEMPLATES)} with roleplay"
+                " framing to bypass alignment"
+            ),
             token_usage=0,
         )
 
@@ -116,8 +120,22 @@ class RoleplayStrategy(BaseAttackStrategy):
         template = _PERSONA_TEMPLATES[next_idx]
         prompt = template.format(objective=objective)
 
+        prev_verdict = params.get("_previous_verdict", "refused")
+        if prev_verdict == "jailbreak":
+            reason_suffix = (
+                "previous persona succeeded — trying alternative"
+                " vector"
+            )
+        else:
+            reason_suffix = "previous persona was unsuccessful"
+
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"persona_index": next_idx},
+            reasoning=(
+                f"Cycling to persona template"
+                f" {next_idx + 1}/{len(_PERSONA_TEMPLATES)}:"
+                f" {reason_suffix}"
+            ),
             token_usage=0,
         )

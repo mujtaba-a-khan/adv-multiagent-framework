@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { useDefenses } from "@/hooks/use-defenses";
 import { useStrategies } from "@/hooks/use-strategies";
 import type { DefenseSelectionItem, SessionMode } from "@/lib/types";
@@ -31,6 +32,7 @@ interface LaunchSessionModalProps {
     strategyName: string,
     maxTurns: number,
     maxCostUsd: number,
+    separateReasoning: boolean,
   ) => void;
   isPending?: boolean;
 }
@@ -48,6 +50,7 @@ export function LaunchSessionModal({
   const [strategyName, setStrategyName] = useState<string>("");
   const [maxTurns, setMaxTurns] = useState<number | "">("");
   const [maxCostUsd, setMaxCostUsd] = useState<number | "">("");
+  const [separateReasoning, setSeparateReasoning] = useState<boolean>(true);
 
   const { data: defensesData, isLoading: defensesLoading } = useDefenses();
   const { data: strategiesData, isLoading: strategiesLoading } = useStrategies();
@@ -78,7 +81,7 @@ export function LaunchSessionModal({
       mode === "defense"
         ? Array.from(selectedDefenses).map((name) => ({ name }))
         : [];
-    onLaunch(mode, items, strategyName, maxTurns as number, maxCostUsd as number);
+    onLaunch(mode, items, strategyName, maxTurns as number, maxCostUsd as number, separateReasoning);
   }
 
   return (
@@ -213,6 +216,21 @@ export function LaunchSessionModal({
               />
             </div>
           </div>
+        </div>
+
+        {/* Reasoning separation toggle */}
+        <div className="flex items-center justify-between rounded-lg border p-4">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-medium">Separate Attacker Thinking</Label>
+            <p className="text-xs text-muted-foreground">
+              LLM reasons about strategy separately, then outputs only the clean
+              attack prompt. Disable for faster single-call mode.
+            </p>
+          </div>
+          <Switch
+            checked={separateReasoning}
+            onCheckedChange={setSeparateReasoning}
+          />
         </div>
 
         {/* Defense selection (defense mode only) */}

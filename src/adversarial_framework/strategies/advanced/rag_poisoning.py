@@ -96,6 +96,10 @@ class RAGPoisoningStrategy(BaseAttackStrategy):
                 "attack_type": "context_poisoning",
                 "iteration": 0,
             },
+            reasoning=(
+                "RAG poisoning: injecting adversarial context via template"
+                f" {self._template_index + 1}/{len(_POISON_TEMPLATES)}"
+            ),
             token_usage=0,
         )
 
@@ -122,5 +126,9 @@ class RAGPoisoningStrategy(BaseAttackStrategy):
                 "iteration": next_idx,
                 "refinement": True,
             },
+            reasoning=(
+                f"RAG poisoning: cycling to template {next_idx + 1}/{len(_POISON_TEMPLATES)}"
+                " after previous context injection failed"
+            ),
             token_usage=0,
         )

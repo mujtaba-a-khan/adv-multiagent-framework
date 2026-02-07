@@ -60,11 +60,20 @@ async def run_executor(
             target_response = state.get("target_response", "")
             verdict = state.get("judge_verdict", JudgeVerdict.REFUSED)
             confidence = state.get("judge_confidence", 0.0)
-            judge_feedback = (
-                f"Verdict: {verdict.value if isinstance(verdict, JudgeVerdict) else verdict}, "
-                f"Confidence: {confidence}"
-            )
+            judge_reason = state.get("judge_reason")
+            fb_parts = [
+                f"Verdict: {verdict.value if isinstance(verdict, JudgeVerdict) else verdict}",
+                f"Confidence: {confidence}",
+            ]
+            if judge_reason:
+                fb_parts.append(f"Reason: {judge_reason}")
+            judge_feedback = ", ".join(fb_parts)
 
+            strategy_params["_previous_verdict"] = (
+                verdict.value
+                if isinstance(verdict, JudgeVerdict)
+                else str(verdict)
+            )
             result = await strategy.refine(
                 objective=objective,
                 previous_prompt=previous_prompt,

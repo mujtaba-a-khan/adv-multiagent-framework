@@ -515,6 +515,9 @@ function TurnMessage({ turn }: { turn: Turn }) {
         <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
           {turn.attack_prompt}
         </p>
+        {turn.attacker_reasoning && (
+          <AttackerReasoningCollapsible reasoning={turn.attacker_reasoning} />
+        )}
       </MessageBubble>
 
       {/* Target response */}
@@ -595,9 +598,16 @@ function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
         label={isBaseline ? "Attacker (Baseline)" : undefined}
       >
         {hasPrompt ? (
-          <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
-            {pending.attack_prompt}
-          </p>
+          <>
+            <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
+              {pending.attack_prompt}
+            </p>
+            {pending.attacker_reasoning && (
+              <AttackerReasoningCollapsible
+                reasoning={pending.attacker_reasoning}
+              />
+            )}
+          </>
         ) : previewText ? (
           <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {previewText}
@@ -661,6 +671,42 @@ function RawResponseCollapsible({ rawResponse }: { rawResponse: string }) {
           </p>
           <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
             {rawResponse}
+          </p>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/* Attacker reasoning collapsible (shows the attacker's thinking/strategy) */
+
+function AttackerReasoningCollapsible({
+  reasoning,
+}: {
+  reasoning: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-3">
+      <CollapsibleTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1.5 rounded-md border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-500/10 dark:text-purple-400"
+        >
+          <ChevronDown
+            className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+          {open ? "Hide Attacker Thinking" : "View Attacker Thinking"}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 rounded-md border border-dashed border-purple-500/20 bg-purple-500/5 p-3">
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-purple-600/70 dark:text-purple-400/70">
+            Strategy Reasoning
+          </p>
+          <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
+            {reasoning}
           </p>
         </div>
       </CollapsibleContent>

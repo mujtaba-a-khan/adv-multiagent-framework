@@ -185,6 +185,10 @@ class GPTFuzzerStrategy(BaseAttackStrategy):
                 "mutation_type": mutation_name,
                 "seed_index": pool.index(seed),
             },
+            reasoning=(
+                f"GPTFuzzer: selected seed template {pool.index(seed) + 1}/{len(pool)} with"
+                f" '{mutation_name}' mutation"
+            ),
             token_usage=0,
         )
 
@@ -224,5 +228,10 @@ class GPTFuzzerStrategy(BaseAttackStrategy):
                 "mutation_types": applied_mutations,
                 "num_mutations": num_mutations,
             },
+            reasoning=(
+                f"GPTFuzzer refinement: applied {num_mutations}"
+                f" mutations ({', '.join(applied_mutations)})"
+                " to previous prompt"
+            ),
             token_usage=0,
         )
