@@ -190,6 +190,41 @@ class FineTuningJobListResponse(BaseModel):
     total: int
 
 
+# Abliteration Dataset
+
+
+class AbliterationPromptResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    text: str
+    category: str
+    source: str
+    status: str
+    experiment_id: uuid.UUID | None
+    session_id: uuid.UUID | None
+    pair_id: uuid.UUID | None
+    created_at: datetime
+
+
+class AbliterationPromptListResponse(BaseModel):
+    prompts: list[AbliterationPromptResponse]
+    total: int
+
+
+class AbliterationDatasetStatsResponse(BaseModel):
+    harmful_count: int
+    harmless_count: int
+    total: int
+    min_recommended: int = 16
+    warning: str | None = None
+
+
+class DatasetSuggestionResponse(BaseModel):
+    suggestions: list[AbliterationPromptResponse]
+    total: int
+
+
 # WebSocket Messages
 class WSMessage(BaseModel):
     """WebSocket message pushed to clients during live sessions."""

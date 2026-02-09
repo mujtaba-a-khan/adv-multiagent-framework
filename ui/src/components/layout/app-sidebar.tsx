@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Database,
   FlaskConical,
   LayoutDashboard,
   Server,
@@ -64,6 +65,11 @@ const NAV_ITEMS = [
         title: "Model Workshop",
         href: ROUTES.workshop.list,
         icon: Wrench,
+      },
+      {
+        title: "Abliteration Dataset",
+        href: ROUTES.workshop.dataset,
+        icon: Database,
       },
       {
         title: "Targets & Models",

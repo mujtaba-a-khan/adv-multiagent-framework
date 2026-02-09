@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from dataclasses import dataclass
 
@@ -139,7 +140,7 @@ async def start_job(
 
     # Snapshot BEFORE update_status (which calls expire_all)
     snapshot = _FineTuningJobSnapshot.from_orm(job)
-    ollama_base_url = provider._base_url
+    ollama_base_url = provider.base_url
 
     await repo.update_status(job_id, "running")
     await repo.db.commit()
@@ -176,6 +177,29 @@ async def cancel_job(
 
     request_cancellation(str(job_id))
     return FineTuningJobResponse.model_validate(job)
+
+
+# Disk Management
+
+
+@router.get("/disk-status")
+async def disk_status() -> dict:
+    """Return disk usage summary including orphan blob detection."""
+    from adversarial_framework.services.finetuning.ollama_import import (
+        get_disk_status,
+    )
+
+    return await asyncio.to_thread(get_disk_status)
+
+
+@router.post("/cleanup-orphans")
+async def cleanup_orphans() -> dict:
+    """Delete orphaned Ollama blobs not referenced by any model."""
+    from adversarial_framework.services.finetuning.ollama_import import (
+        cleanup_orphan_blobs,
+    )
+
+    return await asyncio.to_thread(cleanup_orphan_blobs)
 
 
 # Model Management

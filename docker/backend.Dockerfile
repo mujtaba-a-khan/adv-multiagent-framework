@@ -12,8 +12,8 @@ WORKDIR /app
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies (no dev deps in production)
-RUN uv sync --frozen --no-dev --no-install-project
+# Install dependencies (no dev deps in production, include finetuning extras)
+RUN uv sync --frozen --no-dev --extra finetuning --no-install-project
 
 # Copy source code and README (required by hatchling build)
 COPY README.md ./
@@ -22,7 +22,7 @@ COPY configs/ configs/
 COPY prompt_templates/ prompt_templates/
 
 # Install the project itself
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --extra finetuning
 
 # ── Stage 2: Runtime 
 FROM python:3.12-slim AS runtime

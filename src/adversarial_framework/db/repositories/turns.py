@@ -39,6 +39,20 @@ class TurnRepository:
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
+    async def get_by_turn_number(
+        self, session_id: uuid.UUID, turn_number: int
+    ) -> Turn | None:
+        stmt = (
+            select(Turn)
+            .where(
+                Turn.session_id == session_id,
+                Turn.turn_number == turn_number,
+            )
+            .limit(1)
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_latest(self, session_id: uuid.UUID) -> Turn | None:
         stmt = (
             select(Turn)

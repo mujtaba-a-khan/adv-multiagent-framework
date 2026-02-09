@@ -1,4 +1,4 @@
-"""Alembic environment configuration for async PostgreSQL (Neon)."""
+"""Alembic environment configuration for async PostgreSQL."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ target_metadata = Base.metadata
 # Override sqlalchemy.url from env var (direct connection for migrations)
 database_url = os.environ.get("ADV_DATABASE_URL_DIRECT") or os.environ.get("ADV_DATABASE_URL", "")
 if database_url:
-    # asyncpg uses 'ssl' not 'sslmode' — translate for Neon compatibility
+    # asyncpg uses 'ssl' not 'sslmode' translate if present
     database_url = database_url.replace("sslmode=", "ssl=")
     config.set_main_option("sqlalchemy.url", database_url)
 

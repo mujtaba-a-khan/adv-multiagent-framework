@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import time
+from contextlib import AbstractAsyncContextManager as AsyncContextManager
+from typing import TYPE_CHECKING, Callable
 
 import structlog
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = structlog.get_logger(__name__)
 
@@ -113,12 +118,17 @@ async def run_job(
                 run_abliterate,
             )
 
+            harmful, harmless = await _fetch_dataset_prompts(
+                get_db_session
+            )
             await run_abliterate(
                 snapshot.source_model,
                 snapshot.output_model_name,
                 snapshot.config,
                 ollama_base_url,
                 on_progress,
+                harmful_prompts=harmful,
+                harmless_prompts=harmless,
             )
         elif snapshot.job_type == "sft":
             from adversarial_framework.services.finetuning.sft_pipeline import (
@@ -199,3 +209,21 @@ async def run_job(
                 "data": {"error": str(exc)},
             },
         )
+
+
+async def _fetch_dataset_prompts(
+    get_db_session: Callable[..., AsyncContextManager[AsyncSession]],
+) -> tuple[list[str], list[str]]:
+    """Fetch abliteration dataset prompts from the database."""
+    from adversarial_framework.db.repositories.abliteration_prompts import (
+        AbliterationPromptRepository,
+    )
+
+    async with get_db_session() as db:
+        repo = AbliterationPromptRepository(db)
+        harmful_rows = await repo.list_by_category("harmful")
+        harmless_rows = await repo.list_by_category("harmless")
+    return (
+        [r.text for r in harmful_rows],
+        [r.text for r in harmless_rows],
+    )

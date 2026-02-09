@@ -8,6 +8,9 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from adversarial_framework.db.engine import get_session_factory
+from adversarial_framework.db.repositories.abliteration_prompts import (
+    AbliterationPromptRepository,
+)
 from adversarial_framework.db.repositories.experiments import ExperimentRepository
 from adversarial_framework.db.repositories.finetuning import FineTuningJobRepository
 from adversarial_framework.db.repositories.sessions import SessionRepository
@@ -50,6 +53,12 @@ def get_finetuning_repo(
     session: AsyncSession = Depends(get_db),
 ) -> FineTuningJobRepository:
     return FineTuningJobRepository(session)
+
+
+def get_abliteration_prompt_repo(
+    session: AsyncSession = Depends(get_db),
+) -> AbliterationPromptRepository:
+    return AbliterationPromptRepository(session)
 
 
 def get_ollama_provider(

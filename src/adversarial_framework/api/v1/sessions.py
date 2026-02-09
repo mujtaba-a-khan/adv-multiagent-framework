@@ -28,6 +28,8 @@ from adversarial_framework.db.repositories.sessions import SessionRepository
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
+_SESSION_NOT_FOUND = "Session not found"
+
 
 @dataclass(frozen=True)
 class _ExperimentSnapshot:
@@ -131,7 +133,7 @@ async def get_session(
 ) -> SessionResponse:
     session = await session_repo.get(session_id)
     if session is None or session.experiment_id != experiment_id:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail=_SESSION_NOT_FOUND)
     return SessionResponse.model_validate(session)
 
 
@@ -147,7 +149,7 @@ async def delete_session(
     """Delete a session and all its associated turns."""
     session = await session_repo.get(session_id)
     if session is None or session.experiment_id != experiment_id:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail=_SESSION_NOT_FOUND)
 
     if session.status == "running":
         raise HTTPException(
@@ -176,7 +178,7 @@ async def start_session(
 
     session = await session_repo.get(session_id)
     if session is None or session.experiment_id != experiment_id:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail=_SESSION_NOT_FOUND)
 
     if session.status != "pending":
         raise HTTPException(
@@ -622,6 +624,69 @@ async def _on_finalize(
             "total_blocked": metrics.total_blocked,
         },
     })
+
+    # Auto-detect baseline refusal for abliteration dataset
+    await _check_baseline_for_dataset(session_id)
+
+
+async def _check_baseline_for_dataset(
+    session_id: uuid.UUID,
+) -> None:
+    """If the baseline turn was refused, suggest the objective for
+    the abliteration dataset so the user can confirm it later."""
+    from adversarial_framework.db.engine import get_session as get_db_session
+    from adversarial_framework.db.repositories.abliteration_prompts import (
+        AbliterationPromptRepository,
+    )
+    from adversarial_framework.db.repositories.sessions import (
+        SessionRepository,
+    )
+    from adversarial_framework.db.repositories.turns import (
+        TurnRepository,
+    )
+
+    try:
+        async with get_db_session() as db:
+            # Get baseline turn (turn_number=1)
+            turn = await TurnRepository(db).get_by_turn_number(
+                session_id, 1,
+            )
+            if turn is None or turn.judge_verdict != "refused":
+                return
+
+            # Get the experiment objective via the session
+            sess = await SessionRepository(db).get(session_id)
+            if sess is None:
+                return
+
+            from adversarial_framework.db.repositories.experiments import (
+                ExperimentRepository,
+            )
+
+            exp = await ExperimentRepository(db).get(sess.experiment_id)
+            if exp is None:
+                return
+
+            objective = exp.attack_objective
+            prompt_repo = AbliterationPromptRepository(db)
+
+            # Deduplicate — skip if this text already exists
+            if await prompt_repo.exists_by_text(objective):
+                return
+
+            await prompt_repo.create(
+                text=objective,
+                category="harmful",
+                source="session",
+                status="suggested",
+                experiment_id=sess.experiment_id,
+                session_id=session_id,
+            )
+    except Exception:
+        logger.warning(
+            "baseline_dataset_check_failed",
+            session_id=str(session_id),
+        )
 
 
 _NODE_HANDLERS: dict[str, _NodeHandler] = {

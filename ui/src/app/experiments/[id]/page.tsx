@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Brain,
+  Database,
   GitCompareArrows,
   Play,
   Radio,
@@ -36,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAddDatasetPrompt } from "@/hooks/use-dataset";
 import { useExperiment } from "@/hooks/use-experiments";
 import {
   useSessions,
@@ -56,6 +58,7 @@ export default function ExperimentDetailPage() {
   const createSession = useCreateSession(params.id);
   const startSession = useStartSession(params.id);
   const deleteSessionMutation = useDeleteSession(params.id);
+  const addToDataset = useAddDatasetPrompt();
 
   const sessions = sessionsData?.sessions ?? [];
   const [showLaunchModal, setShowLaunchModal] = useState(false);
@@ -195,8 +198,38 @@ export default function ExperimentDetailPage() {
 
         {/* Objective card */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Attack Objective</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={addToDataset.isPending}
+              onClick={() =>
+                addToDataset.mutate(
+                  {
+                    data: {
+                      text: experiment.attack_objective,
+                      category: "harmful",
+                      source: "session",
+                      experiment_id: experiment.id,
+                    },
+                  },
+                  {
+                    onSuccess: () =>
+                      toast.success(
+                        "Added to abliteration dataset",
+                      ),
+                    onError: () =>
+                      toast.error("Failed to add to dataset"),
+                  },
+                )
+              }
+            >
+              <Database className="mr-2 h-3.5 w-3.5" />
+              {addToDataset.isPending
+                ? "Adding..."
+                : "Add to Dataset"}
+            </Button>
           </CardHeader>
           <CardContent>
             <p className="text-sm whitespace-pre-wrap">

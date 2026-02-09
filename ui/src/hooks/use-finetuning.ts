@@ -8,6 +8,8 @@ import {
   deleteFineTuningJob,
   listCustomModels,
   deleteOllamaModel,
+  getDiskStatus,
+  cleanupOrphans,
 } from "@/lib/api-client";
 import type { CreateFineTuningJobRequest } from "@/lib/types";
 
@@ -83,6 +85,24 @@ export function useDeleteOllamaModel() {
     mutationFn: (name: string) => deleteOllamaModel(name),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom-models"] });
+    },
+  });
+}
+
+export function useDiskStatus() {
+  return useQuery({
+    queryKey: ["disk-status"],
+    queryFn: () => getDiskStatus(),
+    refetchInterval: 15_000,
+  });
+}
+
+export function useCleanupOrphans() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => cleanupOrphans(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["disk-status"] });
     },
   });
 }

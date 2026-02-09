@@ -218,7 +218,7 @@ export default function WorkshopJobDetailPage() {
                     {outputModel && (
                       <>
                         {" "}
-                        &mdash; model{" "}
+                        model{" "}
                         <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
                           {outputModel}
                         </code>{" "}

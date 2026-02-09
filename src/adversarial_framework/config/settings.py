@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     google_api_key: str = ""
 
-    # Database (Neon Serverless PostgreSQL)
+    # Database (PostgreSQL)
 
     database_url: str = ""
     database_url_direct: str = ""  # Direct (non-pooled) for Alembic migrations

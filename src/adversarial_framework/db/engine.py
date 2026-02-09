@@ -1,4 +1,4 @@
-"""Async SQLAlchemy engine and session factory for Neon PostgreSQL.
+"""Async SQLAlchemy engine and session factory for PostgreSQL.
 
 Usage::
 
@@ -34,7 +34,7 @@ def get_engine() -> AsyncEngine:
         if not settings.database_url:
             raise RuntimeError(
                 "ADV_DATABASE_URL is not set. "
-                "Set it to your Neon PostgreSQL connection string."
+                "Set it to your PostgreSQL connection string."
             )
         _engine = create_async_engine(
             settings.database_url,

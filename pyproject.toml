@@ -43,6 +43,8 @@ finetuning = [
     "torch>=2.2",
     "accelerate>=0.30",
     "psutil>=6.0",
+    "gguf>=0.10.0",
+    "sentencepiece>=0.2",
 ]
 
 [project.scripts]

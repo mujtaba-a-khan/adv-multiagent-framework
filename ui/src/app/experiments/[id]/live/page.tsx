@@ -8,12 +8,14 @@ import {
   ArrowLeft,
   Bot,
   ChevronDown,
+  Database,
   Radio,
   Shield,
   ShieldCheck,
   Swords,
   Target,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAddDatasetPrompt } from "@/hooks/use-dataset";
 import { useExperiment } from "@/hooks/use-experiments";
 import { useSession } from "@/hooks/use-sessions";
 import { useTurns } from "@/hooks/use-turns";
@@ -49,6 +52,7 @@ export default function LiveBattlePage() {
   const { data: session } = useSession(params.id, sessionId);
   const { data: turnsData } = useTurns(sessionId);
   const { connect, disconnect, liveTurns, pendingTurn } = useWSStore();
+  const addToDataset = useAddDatasetPrompt();
 
   const chatRef = useRef<HTMLDivElement>(null);
   const [isNearBottom, setIsNearBottom] = useState(true);
@@ -397,6 +401,53 @@ export default function LiveBattlePage() {
                   </CardContent>
                 </Card>
               )}
+
+            {experiment && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">
+                    Abliteration Dataset
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Add this experiment&apos;s objective to the abliteration
+                    dataset as a harmful prompt.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={addToDataset.isPending}
+                    onClick={() =>
+                      addToDataset.mutate(
+                        {
+                          data: {
+                            text: experiment.attack_objective,
+                            category: "harmful",
+                            source: "session",
+                            experiment_id: experiment.id,
+                          },
+                        },
+                        {
+                          onSuccess: () =>
+                            toast.success(
+                              "Added to abliteration dataset",
+                            ),
+                          onError: () =>
+                            toast.error("Failed to add to dataset"),
+                        },
+                      )
+                    }
+                  >
+                    <Database className="mr-2 h-3.5 w-3.5" />
+                    {addToDataset.isPending
+                      ? "Adding..."
+                      : "Add to Dataset"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

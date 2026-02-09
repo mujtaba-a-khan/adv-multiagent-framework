@@ -84,3 +84,45 @@ class CreateFineTuningJobRequest(BaseModel):
         ..., min_length=1, max_length=255
     )
     config: dict = Field(default_factory=dict)
+
+
+# Abliteration Dataset
+
+
+class CreateAbliterationPromptRequest(BaseModel):
+    """Request body for adding a prompt to the abliteration dataset."""
+
+    text: str = Field(..., min_length=1)
+    category: str = Field(
+        ..., pattern=r"^(harmful|harmless)$"
+    )
+    source: str = Field(
+        default="manual", pattern=r"^(manual|upload|session)$"
+    )
+    experiment_id: str | None = None
+    session_id: str | None = None
+    auto_generate_counterpart: bool = False
+
+
+class UpdateAbliterationPromptRequest(BaseModel):
+    """Request body for updating an abliteration prompt."""
+
+    text: str | None = Field(default=None, min_length=1)
+    category: str | None = Field(
+        default=None, pattern=r"^(harmful|harmless)$"
+    )
+
+
+class GenerateHarmlessRequest(BaseModel):
+    """Request to generate a harmless counterpart for a harmful prompt."""
+
+    harmful_prompt: str = Field(..., min_length=1)
+    pair_id: str | None = None
+    experiment_id: str | None = None
+    session_id: str | None = None
+
+
+class ModelLoadRequest(BaseModel):
+    """Request to load or unload an Ollama model."""
+
+    model: str = Field(..., min_length=1, max_length=255)

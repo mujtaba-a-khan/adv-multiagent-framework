@@ -5,6 +5,8 @@ import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   Download,
+  HardDrive,
+  Loader2,
   MoreHorizontal,
   Play,
   Plus,
@@ -62,6 +64,8 @@ import {
   useStartFineTuningJob,
   useCancelFineTuningJob,
   useDeleteFineTuningJob,
+  useDiskStatus,
+  useCleanupOrphans,
 } from "@/hooks/use-finetuning";
 import {
   ROUTES,
@@ -84,6 +88,8 @@ export default function WorkshopPage() {
   const startMutation = useStartFineTuningJob();
   const cancelMutation = useCancelFineTuningJob();
   const deleteMutation = useDeleteFineTuningJob();
+  const { data: disk } = useDiskStatus();
+  const cleanupMutation = useCleanupOrphans();
 
   const jobs = data?.jobs ?? [];
   const filtered = search
@@ -94,6 +100,21 @@ export default function WorkshopPage() {
           j.output_model_name.toLowerCase().includes(search.toLowerCase()),
       )
     : jobs;
+
+  const handleCleanup = () => {
+    cleanupMutation.mutate(undefined, {
+      onSuccess: (result: { orphan_count: number; freed_gb: number }) => {
+        if (result.orphan_count === 0) {
+          toast.info("No orphaned blobs found");
+        } else {
+          toast.success(
+            `Cleaned up ${result.orphan_count} orphans, freed ${result.freed_gb}GB`,
+          );
+        }
+      },
+      onError: () => toast.error("Failed to clean up orphans"),
+    });
+  };
 
   const handleCreate = () => {
     if (!formName || !sourceModel || !outputName) {
@@ -266,6 +287,57 @@ export default function WorkshopPage() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {disk && (
+          <Card>
+            <CardContent className="flex items-center gap-6 py-3">
+              <div className="flex items-center gap-2 text-sm">
+                <HardDrive className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Disk</span>
+                <span className="font-medium">
+                  {disk.disk_free_gb}GB free
+                </span>
+                <span className="text-muted-foreground">
+                  / {disk.disk_total_gb}GB
+                </span>
+              </div>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Ollama</span>
+                <span className="font-medium">
+                  {disk.ollama_storage_gb}GB
+                </span>
+              </div>
+              {disk.orphan_count > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-amber-500 font-medium">
+                      {disk.orphan_gb}GB orphaned
+                    </span>
+                    <span className="text-muted-foreground">
+                      ({disk.orphan_count} blobs)
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleCleanup}
+                      disabled={cleanupMutation.isPending}
+                    >
+                      {cleanupMutation.isPending ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="mr-1 h-3 w-3" />
+                      )}
+                      Clean Up
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

@@ -147,26 +147,18 @@ async def run_sft(
 
         await on_progress(86.0, "Adapter fused")
 
-        # Step 5: Convert to GGUF
-        quantize = config.get("quantize", "q4_K_M")
-        gguf_path = work_dir / f"{output_name}.gguf"
-        await on_progress(88.0, "Converting to GGUF format")
-        from adversarial_framework.services.finetuning.abliterate_pipeline import (
-            _convert_to_gguf,
-        )
-
-        await _convert_to_gguf(fused_path, gguf_path, quantize)
-
-        # Step 6: Import to Ollama
+        # Step 5: Import to Ollama (handles conversion + quantization)
         from adversarial_framework.services.finetuning.ollama_import import (
             import_to_ollama,
         )
 
+        quantize = config.get("quantize", "q4_K_M")
         await import_to_ollama(
-            str(gguf_path),
+            str(fused_path),
             output_name,
             ollama_base_url,
             on_progress,
+            quantize=quantize,
         )
 
     finally:

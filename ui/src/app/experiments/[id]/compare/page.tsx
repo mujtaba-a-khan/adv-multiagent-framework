@@ -124,8 +124,8 @@ export default function ComparisonPage() {
               );
               return (
                 <div key={turnNum} className="grid grid-cols-2 gap-4">
-                  <TurnCard turn={aTurn} turnNumber={turnNum} mode="attack" />
-                  <TurnCard turn={dTurn} turnNumber={turnNum} mode="defense" />
+                  <TurnCard turn={aTurn} turnNumber={turnNum} />
+                  <TurnCard turn={dTurn} turnNumber={turnNum} />
                 </div>
               );
             })}
@@ -152,12 +152,9 @@ function DeltaCard({
   format: (v: number) => string;
 }) {
   // Directional coloring: red = decrease, green = increase, neutral = zero
-  const colorClass =
-    delta === 0
-      ? "text-muted-foreground"
-      : delta < 0
-        ? "text-red-500"
-        : "text-emerald-500";
+  let colorClass = "text-muted-foreground";
+  if (delta < 0) colorClass = "text-red-500";
+  else if (delta > 0) colorClass = "text-emerald-500";
 
   return (
     <Card>
@@ -175,13 +172,9 @@ function DeltaCard({
             </div>
           </div>
           <div className={`flex items-center gap-1 text-lg font-bold ${colorClass}`}>
-            {delta === 0 ? (
-              <Minus className="h-4 w-4" />
-            ) : delta < 0 ? (
-              <ArrowDown className="h-4 w-4" />
-            ) : (
-              <ArrowUp className="h-4 w-4" />
-            )}
+            {delta === 0 && <Minus className="h-4 w-4" />}
+            {delta < 0 && <ArrowDown className="h-4 w-4" />}
+            {delta > 0 && <ArrowUp className="h-4 w-4" />}
             {format(delta)}
           </div>
         </div>
@@ -244,7 +237,6 @@ function TurnCard({
 }: {
   turn: Turn | undefined;
   turnNumber: number;
-  mode: "attack" | "defense";
 }) {
   const [expanded, setExpanded] = useState(false);
 
