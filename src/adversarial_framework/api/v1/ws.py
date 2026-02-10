@@ -75,6 +75,61 @@ async def ws_finetuning(websocket: WebSocket, job_id: str) -> None:
                 del _ft_connections[job_id]
 
 
+# Playground connections (separate registry)
+
+_pg_connections: dict[str, list[WebSocket]] = {}
+
+
+async def broadcast_playground(
+    conversation_id: str, message: dict
+) -> None:
+    """Send a message to all WebSocket clients watching a playground."""
+    clients = _pg_connections.get(conversation_id, [])
+    disconnected: list[WebSocket] = []
+    for ws in clients:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            disconnected.append(ws)
+    for ws in disconnected:
+        clients.remove(ws)
+
+
+@router.websocket("/ws/playground/{conversation_id}")
+async def ws_playground(
+    websocket: WebSocket, conversation_id: str
+) -> None:
+    """WebSocket endpoint for live playground updates."""
+    await websocket.accept()
+
+    if conversation_id not in _pg_connections:
+        _pg_connections[conversation_id] = []
+    _pg_connections[conversation_id].append(websocket)
+
+    logger.info(
+        "pg_ws_connected", conversation_id=conversation_id
+    )
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        logger.info(
+            "pg_ws_disconnected",
+            conversation_id=conversation_id,
+        )
+    finally:
+        if conversation_id in _pg_connections:
+            try:
+                _pg_connections[conversation_id].remove(
+                    websocket
+                )
+            except ValueError:
+                pass
+            if not _pg_connections[conversation_id]:
+                del _pg_connections[conversation_id]
+
+
 # Session connections
 
 @router.websocket("/ws/{session_id}")

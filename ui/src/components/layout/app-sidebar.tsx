@@ -7,6 +7,7 @@ import {
   Database,
   FlaskConical,
   LayoutDashboard,
+  MessageSquare,
   Server,
   Settings,
   Shield,
@@ -50,6 +51,11 @@ const NAV_ITEMS = [
         title: "Reports",
         href: ROUTES.reports.list,
         icon: BarChart3,
+      },
+      {
+        title: "Playground",
+        href: ROUTES.playground.list,
+        icon: MessageSquare,
       },
       {
         title: "Strategies",

@@ -225,6 +225,64 @@ class DatasetSuggestionResponse(BaseModel):
     total: int
 
 
+# Playground
+
+
+class PlaygroundConversationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    target_model: str
+    target_provider: str
+    system_prompt: str | None
+    analyzer_model: str
+    active_defenses: list[dict]
+    total_messages: int
+    total_jailbreaks: int
+    total_blocked: int
+    total_target_tokens: int
+    total_analyzer_tokens: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class PlaygroundConversationListResponse(BaseModel):
+    conversations: list[PlaygroundConversationResponse]
+    total: int
+
+
+class PlaygroundMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    message_number: int
+    user_prompt: str
+    target_response: str
+    raw_target_response: str | None
+    target_blocked: bool
+    blocked_by_defense: str | None
+    block_reason: str | None
+    defenses_applied: list[dict] | None
+    judge_verdict: str
+    judge_confidence: float
+    severity_score: float | None
+    specificity_score: float | None
+    vulnerability_category: str | None
+    attack_technique: str | None
+    target_tokens: int
+    analyzer_tokens: int
+    target_latency_ms: float
+    analyzer_latency_ms: float
+    created_at: datetime
+
+
+class PlaygroundMessageListResponse(BaseModel):
+    messages: list[PlaygroundMessageResponse]
+    total: int
+
+
 # WebSocket Messages
 class WSMessage(BaseModel):
     """WebSocket message pushed to clients during live sessions."""

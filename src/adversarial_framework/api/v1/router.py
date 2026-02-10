@@ -9,6 +9,7 @@ from adversarial_framework.api.v1.dataset import router as dataset_router
 from adversarial_framework.api.v1.defenses import router as defenses_router
 from adversarial_framework.api.v1.experiments import router as experiments_router
 from adversarial_framework.api.v1.finetuning import router as finetuning_router
+from adversarial_framework.api.v1.playground import router as playground_router
 from adversarial_framework.api.v1.sessions import router as sessions_router
 from adversarial_framework.api.v1.strategies import router as strategies_router
 from adversarial_framework.api.v1.targets import router as targets_router
@@ -27,5 +28,8 @@ v1_router.include_router(targets_router, prefix="/targets", tags=["Targets"])
 v1_router.include_router(finetuning_router, prefix="/finetuning", tags=["Fine-Tuning"])
 v1_router.include_router(
     dataset_router, prefix="/finetuning/dataset", tags=["Abliteration Dataset"]
+)
+v1_router.include_router(
+    playground_router, prefix="/playground", tags=["Playground"]
 )
 v1_router.include_router(ws_router, tags=["WebSocket"])

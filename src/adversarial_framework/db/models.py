@@ -221,6 +221,125 @@ class DefenseActionRecord(Base):
     session: Mapped[Session] = relationship(back_populates="defense_actions")
 
 
+# Playground
+
+
+class PlaygroundConversation(Base):
+    """A user-driven playground chat session for manual LLM testing."""
+
+    __tablename__ = "playground_conversations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Target configuration
+    target_model: Mapped[str] = mapped_column(String(128), nullable=False)
+    target_provider: Mapped[str] = mapped_column(String(64), default="ollama")
+    system_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Analyzer configuration
+    analyzer_model: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    # Active defenses (JSON array of {name, params})
+    active_defenses: Mapped[list] = mapped_column(
+        JSON, default=list, nullable=False
+    )
+
+    # Aggregate stats (denormalized for fast sidebar display)
+    total_messages: Mapped[int] = mapped_column(Integer, default=0)
+    total_jailbreaks: Mapped[int] = mapped_column(Integer, default=0)
+    total_blocked: Mapped[int] = mapped_column(Integer, default=0)
+    total_target_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    total_analyzer_tokens: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    messages: Mapped[list[PlaygroundMessage]] = relationship(
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="PlaygroundMessage.message_number",
+    )
+
+
+class PlaygroundMessage(Base):
+    """A single exchange in a playground conversation."""
+
+    __tablename__ = "playground_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("playground_conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    message_number: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # User input
+    user_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Target response
+    target_response: Mapped[str] = mapped_column(Text, nullable=False)
+    raw_target_response: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )
+    target_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Defense feedback
+    blocked_by_defense: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
+    block_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Defense snapshot (which defenses were active when processed)
+    defenses_applied: Mapped[list | None] = mapped_column(
+        JSON, nullable=True, default=None
+    )
+
+    # Analysis
+    judge_verdict: Mapped[str] = mapped_column(String(32), nullable=False)
+    judge_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    severity_score: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+    specificity_score: Mapped[float | None] = mapped_column(
+        Float, nullable=True
+    )
+    vulnerability_category: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
+    attack_technique: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
+
+    # Token usage
+    target_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    analyzer_tokens: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Latency
+    target_latency_ms: Mapped[float] = mapped_column(Float, default=0.0)
+    analyzer_latency_ms: Mapped[float] = mapped_column(Float, default=0.0)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    # Relationships
+    conversation: Mapped[PlaygroundConversation] = relationship(
+        back_populates="messages"
+    )
+
+
 # ── Vulnerability Catalog ────────────────────────────────────────────────────
 
 

@@ -233,3 +233,4 @@ prompt_templates
 
 #Test Suite
 tests/
+ui/src/ui-tests/

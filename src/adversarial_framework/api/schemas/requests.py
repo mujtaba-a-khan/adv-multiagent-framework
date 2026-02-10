@@ -126,3 +126,35 @@ class ModelLoadRequest(BaseModel):
     """Request to load or unload an Ollama model."""
 
     model: str = Field(..., min_length=1, max_length=255)
+
+
+# Playground
+
+
+class CreatePlaygroundConversationRequest(BaseModel):
+    """Request body for creating a new playground conversation."""
+
+    title: str = Field(..., min_length=1, max_length=255)
+    target_model: str = Field(..., min_length=1, max_length=128)
+    target_provider: str = Field(default="ollama", max_length=64)
+    system_prompt: str | None = None
+    analyzer_model: str = Field(
+        default="phi4-reasoning:14b", max_length=128
+    )
+    active_defenses: list[DefenseSelectionItem] | None = None
+
+
+class UpdatePlaygroundConversationRequest(BaseModel):
+    """Request body for updating a playground conversation."""
+
+    title: str | None = Field(
+        default=None, min_length=1, max_length=255
+    )
+    system_prompt: str | None = None
+    active_defenses: list[DefenseSelectionItem] | None = None
+
+
+class SendPlaygroundMessageRequest(BaseModel):
+    """Request body for sending a message in a playground conversation."""
+
+    prompt: str = Field(..., min_length=1)
