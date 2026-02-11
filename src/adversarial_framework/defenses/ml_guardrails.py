@@ -13,6 +13,9 @@ import re
 from adversarial_framework.defenses.base import BaseDefense, DefenseCheckResult
 from adversarial_framework.defenses.registry import DefenseRegistry
 
+# Maximum input/output length to prevent oversized payload abuse
+_MAX_INPUT_LENGTH = 10_000
+
 # Weighted feature signals for injection detection
 _INJECTION_SIGNALS: list[tuple[str, float, re.Pattern[str]]] = [
     (
@@ -106,6 +109,14 @@ class MLGuardrailsDefense(BaseDefense):
 
     async def check_input(self, prompt: str) -> DefenseCheckResult:
         """Score input against injection signals."""
+        if len(prompt) > _MAX_INPUT_LENGTH:
+            return DefenseCheckResult(
+                blocked=True,
+                reason="Input exceeds maximum allowed length",
+                confidence=0.99,
+                metadata={"defense": self.name, "score": 1.0},
+            )
+
         score = 0.0
         triggered: list[str] = []
 
@@ -133,6 +144,14 @@ class MLGuardrailsDefense(BaseDefense):
 
     async def check_output(self, response: str) -> DefenseCheckResult:
         """Score output against harmful content signals."""
+        if len(response) > _MAX_INPUT_LENGTH:
+            return DefenseCheckResult(
+                blocked=True,
+                reason="Output exceeds maximum allowed length",
+                confidence=0.99,
+                metadata={"defense": self.name, "score": 1.0},
+            )
+
         score = 0.0
         triggered: list[str] = []
 

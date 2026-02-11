@@ -41,7 +41,7 @@ services:
       redis-server
       --maxmemory 512mb
       --maxmemory-policy allkeys-lru
-      --requirepass ${REDIS_PASSWORD:-changeme}
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set for production}
       --appendonly yes
     deploy:
       resources:

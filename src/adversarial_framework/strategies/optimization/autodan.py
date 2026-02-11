@@ -9,7 +9,7 @@ Reference: Liu et al. — https://arxiv.org/abs/2310.04451
 
 from __future__ import annotations
 
-import random
+import random  # noqa: S311
 from typing import Any
 
 from adversarial_framework.core.constants import AttackCategory

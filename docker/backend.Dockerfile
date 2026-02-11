@@ -1,11 +1,12 @@
 # Multi-stage Python backend Dockerfile
 # Uses uv for fast, reproducible dependency installation
 
-# ── Stage 1: Build 
-FROM python:3.12-slim AS builder
+# ── Stage 1: Build
+# Pin: run `docker pull python:3.12-slim` and update digest
+FROM python:3.12-slim@sha256:9e01bf1ae5db7649a236da7be1e94ffbbbdd7a93f867dd0d8d5720d9e1f89fab AS builder
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Install uv (pinned to minor version — update when upgrading uv.lock)
+COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
 
 WORKDIR /app
 
@@ -24,8 +25,8 @@ COPY prompt_templates/ prompt_templates/
 # Install the project itself
 RUN uv sync --frozen --no-dev --extra finetuning
 
-# ── Stage 2: Runtime 
-FROM python:3.12-slim AS runtime
+# ── Stage 2: Runtime (same digest as builder)
+FROM python:3.12-slim@sha256:9e01bf1ae5db7649a236da7be1e94ffbbbdd7a93f867dd0d8d5720d9e1f89fab AS runtime
 
 # Security: run as non-root
 RUN groupadd --gid 1001 appgroup && \

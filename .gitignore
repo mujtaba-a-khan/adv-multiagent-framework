@@ -230,5 +230,3 @@ docs
 notebooks
 prompt_templates
 
-#Test Suite
-ui/src/ui-tests/

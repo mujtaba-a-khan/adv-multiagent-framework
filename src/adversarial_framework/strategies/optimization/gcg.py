@@ -9,7 +9,7 @@ Reference: Universal and Transferable Adversarial Attacks (Zou et al. 2023).
 
 from __future__ import annotations
 
-import random
+import random  # noqa: S311
 import string
 from typing import Any
 
