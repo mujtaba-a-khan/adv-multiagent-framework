@@ -1,4 +1,4 @@
 # Auto-collapse in GitHub PR diffs (files stay tracked for CI)
 tests/** linguist-generated=true
-ui/src/ui-tests/** linguist-generated=true
+ui/tests/** linguist-generated=true
 src/adversarial_framework/db/migrations/versions/*.py linguist-generated=true
