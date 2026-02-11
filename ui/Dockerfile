@@ -1,11 +1,12 @@
+# Pin: run `docker pull node:22-alpine` and update digest across all stages
 # ── Stage 1: Install dependencies ───────────────────────────────
-FROM node:22-alpine AS deps
+FROM node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34 AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # ── Stage 2: Build ──────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -14,7 +15,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ── Stage 3: Production runner ──────────────────────────────────
-FROM node:22-alpine AS runner
+FROM node:22-alpine@sha256:e4bf2a82ad0a4037d28035ae71529873c069b13eb0455466ae0bc13363826e34 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

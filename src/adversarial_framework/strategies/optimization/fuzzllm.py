@@ -9,7 +9,7 @@ Reference: FuzzLLM (Yu et al. 2024) — Fuzzing Framework for LLMs.
 
 from __future__ import annotations
 
-import random
+import random  # noqa: S311
 from typing import Any
 
 from adversarial_framework.core.constants import AttackCategory
@@ -61,14 +61,13 @@ _CONTEXT_SETUPS = [
 
 def _fuzz_prompt(objective: str, seed: int | None = None) -> tuple[str, dict[str, str]]:
     """Generate a fuzzed prompt from random components."""
-    if seed is not None:
-        random.seed(seed)
+    rng = random.Random(seed)
 
-    structure = random.choice(_STRUCTURES)
-    persona = random.choice(_PERSONAS)
-    constraint = random.choice(_CONSTRAINTS)
-    action = random.choice(_ACTIONS)
-    context_setup = random.choice(_CONTEXT_SETUPS)
+    structure = rng.choice(_STRUCTURES)
+    persona = rng.choice(_PERSONAS)
+    constraint = rng.choice(_CONSTRAINTS)
+    action = rng.choice(_ACTIONS)
+    context_setup = rng.choice(_CONTEXT_SETUPS)
 
     prompt = structure.format(
         persona=persona,

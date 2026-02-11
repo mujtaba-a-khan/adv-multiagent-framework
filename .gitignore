@@ -231,5 +231,3 @@ notebooks
 configs
 prompt_templates
 
-#Test Suite
-ui/src/ui-tests/

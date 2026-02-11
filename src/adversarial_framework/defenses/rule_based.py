@@ -11,21 +11,32 @@ import re
 from adversarial_framework.defenses.base import BaseDefense, DefenseCheckResult
 from adversarial_framework.defenses.registry import DefenseRegistry
 
-# jailbreak pattern regexes
+# Maximum input/output length to prevent ReDoS via oversized payloads
+_MAX_INPUT_LENGTH = 10_000
+
+# Jailbreak pattern regexes — all use bounded [\s\S]{0,500} instead of
+# unbounded .* to prevent catastrophic backtracking (ReDoS).
 
 _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("DAN_pattern", re.compile(r"\bDAN\b.*(?:do anything|no restrictions|ignore)", re.I | re.S)),
+    (
+        "DAN_pattern",
+        re.compile(
+            r"\bDAN\b[\s\S]{0,500}(?:do anything|no restrictions|ignore)",
+            re.I | re.S,
+        ),
+    ),
     (
         "jailbreak_directive",
         re.compile(
-            r"(?:ignore|disregard|forget).*(?:previous|above|prior)\s*(?:instructions|rules|guidelines)",
+            r"(?:ignore|disregard|forget)[\s\S]{0,500}"
+            r"(?:previous|above|prior)\s*(?:instructions|rules|guidelines)",
             re.I | re.S,
         ),
     ),
     (
         "roleplay_bypass",
         re.compile(
-            r"(?:pretend|imagine|act as if).*"
+            r"(?:pretend|imagine|act as if)[\s\S]{0,500}"
             r"(?:no (?:rules|restrictions|limitations|filters|safety))",
             re.I | re.S,
         ),
@@ -35,13 +46,18 @@ _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "system_prompt_extract",
         re.compile(
-            r"(?:reveal|show|repeat|print|output).*(?:system\s*prompt|instructions|initial\s*prompt)",
+            r"(?:reveal|show|repeat|print|output)[\s\S]{0,500}"
+            r"(?:system\s*prompt|instructions|initial\s*prompt)",
             re.I | re.S,
         ),
     ),
     (
         "encoding_instruction",
-        re.compile(r"(?:encode|decrypt|translate).*(?:base64|rot13|caesar|hex)", re.I | re.S),
+        re.compile(
+            r"(?:encode|decrypt|translate)[\s\S]{0,500}"
+            r"(?:base64|rot13|caesar|hex)",
+            re.I | re.S,
+        ),
     ),
 ]
 
@@ -49,7 +65,8 @@ _OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "harmful_compliance",
         re.compile(
-            r"(?:sure|okay|of course|here(?:'s| is)).*(?:how to|steps to|instructions for)",
+            r"(?:sure|okay|of course|here(?:'s| is))[\s\S]{0,500}"
+            r"(?:how to|steps to|instructions for)",
             re.I | re.S,
         ),
     ),
@@ -81,6 +98,14 @@ class RuleBasedDefense(BaseDefense):
 
     async def check_input(self, prompt: str) -> DefenseCheckResult:
         """Check input against known jailbreak patterns and blocked keywords."""
+        if len(prompt) > _MAX_INPUT_LENGTH:
+            return DefenseCheckResult(
+                blocked=True,
+                reason="Input exceeds maximum allowed length",
+                confidence=0.99,
+                metadata={"defense": self.name, "rule": "max_length"},
+            )
+
         for label, pattern in self.input_patterns:
             if pattern.search(prompt):
                 return DefenseCheckResult(
@@ -104,6 +129,14 @@ class RuleBasedDefense(BaseDefense):
 
     async def check_output(self, response: str) -> DefenseCheckResult:
         """Check output for harmful compliance patterns."""
+        if len(response) > _MAX_INPUT_LENGTH:
+            return DefenseCheckResult(
+                blocked=True,
+                reason="Output exceeds maximum allowed length",
+                confidence=0.99,
+                metadata={"defense": self.name, "rule": "max_length"},
+            )
+
         for label, pattern in self.output_patterns:
             if pattern.search(response):
                 return DefenseCheckResult(

@@ -10,7 +10,7 @@ Reference: HiddenLayer — https://hiddenlayer.com/innovation-hub/prompt-injecti
 
 from __future__ import annotations
 
-import random
+import random  # noqa: S311
 from typing import Any
 
 from adversarial_framework.core.constants import AttackCategory
