@@ -36,9 +36,7 @@ class GoogleProvider(BaseProvider):
 
             api_key = os.environ.get("GOOGLE_API_KEY", "")
         if not api_key:
-            raise ValueError(
-                "Google API key is required. Set GOOGLE_API_KEY or pass api_key="
-            )
+            raise ValueError("Google API key is required. Set GOOGLE_API_KEY or pass api_key=")
         self._api_key = api_key
         self._default_model = default_model
         self._client = httpx.AsyncClient(timeout=120.0)
@@ -64,10 +62,12 @@ class GoogleProvider(BaseProvider):
                 system_instruction = text
                 continue
             gemini_role = "model" if role == "assistant" else "user"
-            contents.append({
-                "role": gemini_role,
-                "parts": [{"text": text}],
-            })
+            contents.append(
+                {
+                    "role": gemini_role,
+                    "parts": [{"text": text}],
+                }
+            )
 
         if not contents:
             contents = [{"role": "user", "parts": [{"text": ""}]}]
@@ -80,9 +80,7 @@ class GoogleProvider(BaseProvider):
             },
         }
         if system_instruction:
-            payload["systemInstruction"] = {
-                "parts": [{"text": system_instruction}]
-            }
+            payload["systemInstruction"] = {"parts": [{"text": system_instruction}]}
 
         url = f"{_GEMINI_BASE}/models/{model}:generateContent?key={self._api_key}"
 

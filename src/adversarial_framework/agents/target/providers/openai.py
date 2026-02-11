@@ -30,8 +30,7 @@ class OpenAIProvider(BaseProvider):
     ) -> None:
         if AsyncOpenAI is None:
             raise ImportError(
-                "openai package is required for OpenAIProvider. "
-                "Install with: uv add openai"
+                "openai package is required for OpenAIProvider. Install with: uv add openai"
             )
         self._client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self._default_model = default_model

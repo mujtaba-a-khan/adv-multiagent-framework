@@ -53,6 +53,5 @@ def get_provider(name: str, **kwargs) -> BaseProvider:  # type: ignore[type-arg]
         return VLLMProvider(**kwargs)
     else:
         raise ValueError(
-            f"Unknown provider: {name!r}. "
-            "Choose from: ollama, openai, anthropic, google, vllm"
+            f"Unknown provider: {name!r}. Choose from: ollama, openai, anthropic, google, vllm"
         )

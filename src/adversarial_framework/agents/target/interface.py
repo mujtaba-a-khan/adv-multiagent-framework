@@ -126,9 +126,7 @@ class TargetInterface:
 
     # Helpers
 
-    def _build_messages(
-        self, prompt: str, state: AdversarialState
-    ) -> list[dict[str, str]]:
+    def _build_messages(self, prompt: str, state: AdversarialState) -> list[dict[str, str]]:
         """Assemble the message list for the target LLM."""
         messages: list[dict[str, str]] = []
 
@@ -154,9 +152,11 @@ class TargetInterface:
 # Budget helpers
 def _zero_budget() -> dict[str, int | float]:
     from adversarial_framework.core.state import TokenBudget
+
     return TokenBudget()
 
 
 def _target_budget(tokens: int) -> dict[str, int | float]:
     from adversarial_framework.core.state import TokenBudget
+
     return TokenBudget(total_target_tokens=tokens)

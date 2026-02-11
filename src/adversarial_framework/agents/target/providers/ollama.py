@@ -91,9 +91,7 @@ class OllamaProvider(BaseProvider):
         except httpx.HTTPError:
             return False
 
-    async def load_model(
-        self, model: str, keep_alive: str = "30m"
-    ) -> None:
+    async def load_model(self, model: str, keep_alive: str = "30m") -> None:
         """Preload a model into Ollama memory."""
         await self._client.post(
             "/api/generate",
