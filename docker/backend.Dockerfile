@@ -18,8 +18,6 @@ RUN uv sync --frozen --no-dev --extra finetuning --no-install-project
 # Copy source code and README (required by hatchling build)
 COPY README.md ./
 COPY src/ src/
-COPY configs/ configs/
-COPY prompt_templates/ prompt_templates/
 
 # Install the project itself
 RUN uv sync --frozen --no-dev --extra finetuning
@@ -38,8 +36,6 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Copy application code
 COPY --from=builder /app/src /app/src
-COPY --from=builder /app/configs /app/configs
-COPY --from=builder /app/prompt_templates /app/prompt_templates
 
 # Copy alembic config if present
 COPY alembic.ini* ./

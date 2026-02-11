@@ -8,8 +8,9 @@ runtime by the Defender agent (live patching / adversarial arms race).
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.state import AdversarialState
@@ -43,7 +44,7 @@ class TargetInterface:
                 "error_count": 1,
             }
 
-        """Input Defense Pipeline 
+        """Input Defense Pipeline
         effective_prompt may be modified by wrapping defenses (sandwich,
         two_pass) while the original `prompt` is always used for detection."""
         effective_prompt = prompt
@@ -92,7 +93,6 @@ class TargetInterface:
             }
 
         # Input was blocked but LLM succeeded, return block msg + raw
-        
         if input_block_msg is not None:
             return {
                 "target_response": input_block_msg,
@@ -101,7 +101,7 @@ class TargetInterface:
                 "token_budget": _target_budget(response.usage.total_tokens),
             }
 
-        # Output Defense Pipeline 
+        # Output Defense Pipeline
         for defense in self.active_defenses:
             result = await defense.check_output(response.content)
             if result.blocked:

@@ -170,7 +170,7 @@ class TestStrategyExecution:
             # Strategies using an LLM (MockProvider) may return identical
             # "Mock response" for both generate and refine — that's expected.
             # Only template-based strategies are expected to differ.
-            llm_dependent = {
+            nondeterministic = {
                 "pair",
                 "tap",
                 "crescendo",
@@ -178,8 +178,9 @@ class TestStrategyExecution:
                 "knowledge_driven",
                 "composite",
                 "strategy_chain",
+                "gptfuzzer",
             }
-            if name not in llm_dependent:
+            if name not in nondeterministic:
                 assert ref_result.prompt != gen_result.prompt, (
                     f"Strategy '{name}' did not change prompt on refinement"
                 )

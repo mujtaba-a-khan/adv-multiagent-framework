@@ -228,6 +228,7 @@ node_modules
 .DS_Store
 docs
 notebooks
+configs
 prompt_templates
 
 #Test Suite
