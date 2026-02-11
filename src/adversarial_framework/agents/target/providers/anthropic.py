@@ -13,8 +13,11 @@ from adversarial_framework.agents.target.providers.base import (
 
 try:
     from anthropic import AsyncAnthropic
+
+    _HAS_ANTHROPIC = True
 except ImportError:
     AsyncAnthropic = None  # type: ignore[assignment,misc]
+    _HAS_ANTHROPIC = False
 
 
 class AnthropicProvider(BaseProvider):
@@ -27,7 +30,7 @@ class AnthropicProvider(BaseProvider):
         api_key: str | None = None,
         default_model: str = "claude-sonnet-4-20250514",
     ) -> None:
-        if AsyncAnthropic is None:
+        if not _HAS_ANTHROPIC:
             raise ImportError(
                 "anthropic package is required for AnthropicProvider. "
                 "Install with: uv add anthropic"

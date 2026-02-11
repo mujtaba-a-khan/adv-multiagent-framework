@@ -42,6 +42,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+coverage.xml
 .cache
 nosetests.xml
 *.cover
@@ -49,6 +50,7 @@ nosetests.xml
 .hypothesis/
 .pytest_cache/
 cover/
+ui/coverage/
 
 # Translations
 *.mo
