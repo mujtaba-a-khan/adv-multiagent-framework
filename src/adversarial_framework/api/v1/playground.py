@@ -55,11 +55,7 @@ async def create_conversation(
     repo: PlaygroundRepoDep,
 ) -> PlaygroundConversationResponse:
     """Create a new playground conversation."""
-    defenses_data = (
-        [d.model_dump() for d in body.active_defenses]
-        if body.active_defenses
-        else []
-    )
+    defenses_data = [d.model_dump() for d in body.active_defenses] if body.active_defenses else []
     conversation = await repo.create_conversation(
         title=body.title,
         target_model=body.target_model,
@@ -68,9 +64,7 @@ async def create_conversation(
         analyzer_model=body.analyzer_model,
         active_defenses=defenses_data,
     )
-    return PlaygroundConversationResponse.model_validate(
-        conversation
-    )
+    return PlaygroundConversationResponse.model_validate(conversation)
 
 
 @router.get("/conversations")
@@ -80,14 +74,9 @@ async def list_conversations(
     limit: int = 50,
 ) -> PlaygroundConversationListResponse:
     """List playground conversations (most recent first)."""
-    conversations, total = await repo.list_conversations(
-        offset=offset, limit=limit
-    )
+    conversations, total = await repo.list_conversations(offset=offset, limit=limit)
     return PlaygroundConversationListResponse(
-        conversations=[
-            PlaygroundConversationResponse.model_validate(c)
-            for c in conversations
-        ],
+        conversations=[PlaygroundConversationResponse.model_validate(c) for c in conversations],
         total=total,
     )
 
@@ -101,9 +90,7 @@ async def get_conversation(
     conversation = await repo.get_conversation(conversation_id)
     if conversation is None:
         raise HTTPException(404, _CONVERSATION_NOT_FOUND)
-    return PlaygroundConversationResponse.model_validate(
-        conversation
-    )
+    return PlaygroundConversationResponse.model_validate(conversation)
 
 
 @router.patch("/conversations/{conversation_id}")
@@ -119,20 +106,14 @@ async def update_conversation(
     if body.system_prompt is not None:
         updates["system_prompt"] = body.system_prompt
     if body.active_defenses is not None:
-        updates["active_defenses"] = [
-            d.model_dump() for d in body.active_defenses
-        ]
+        updates["active_defenses"] = [d.model_dump() for d in body.active_defenses]
     if not updates:
         raise HTTPException(400, "No fields to update")
 
-    conversation = await repo.update_conversation(
-        conversation_id, **updates
-    )
+    conversation = await repo.update_conversation(conversation_id, **updates)
     if conversation is None:
         raise HTTPException(404, _CONVERSATION_NOT_FOUND)
-    return PlaygroundConversationResponse.model_validate(
-        conversation
-    )
+    return PlaygroundConversationResponse.model_validate(conversation)
 
 
 @router.delete(
@@ -164,14 +145,9 @@ async def list_messages(
     if conversation is None:
         raise HTTPException(404, _CONVERSATION_NOT_FOUND)
 
-    messages, total = await repo.list_messages(
-        conversation_id, offset=offset, limit=limit
-    )
+    messages, total = await repo.list_messages(conversation_id, offset=offset, limit=limit)
     return PlaygroundMessageListResponse(
-        messages=[
-            PlaygroundMessageResponse.model_validate(m)
-            for m in messages
-        ],
+        messages=[PlaygroundMessageResponse.model_validate(m) for m in messages],
         total=total,
     )
 
@@ -199,17 +175,18 @@ async def send_message(
     msg_num = conversation.total_messages + 1
 
     # 1. Broadcast: started
-    await broadcast_playground(cid, {
-        "type": "pg_processing",
-        "conversation_id": cid,
-        "message_number": msg_num,
-        "data": {"phase": "started"},
-    })
+    await broadcast_playground(
+        cid,
+        {
+            "type": "pg_processing",
+            "conversation_id": cid,
+            "message_number": msg_num,
+            "data": {"phase": "started"},
+        },
+    )
 
     # 2. Instantiate defenses
-    defenses = _instantiate_defenses(
-        conversation.active_defenses, provider
-    )
+    defenses = _instantiate_defenses(conversation.active_defenses, provider)
 
     # 3. Build TargetInterface
     target = TargetInterface(
@@ -219,9 +196,7 @@ async def send_message(
     )
 
     # 4. Build conversation history from prior messages
-    prior_messages, _ = await repo.list_messages(
-        conversation_id, limit=100
-    )
+    prior_messages, _ = await repo.list_messages(conversation_id, limit=100)
     history = _build_conversation_history(prior_messages)
 
     # 5. Build state dict for TargetInterface
@@ -233,12 +208,15 @@ async def send_message(
     }
 
     # 6. Call target LLM
-    await broadcast_playground(cid, {
-        "type": "pg_processing",
-        "conversation_id": cid,
-        "message_number": msg_num,
-        "data": {"phase": "target_calling"},
-    })
+    await broadcast_playground(
+        cid,
+        {
+            "type": "pg_processing",
+            "conversation_id": cid,
+            "message_number": msg_num,
+            "data": {"phase": "target_calling"},
+        },
+    )
 
     t0 = time.perf_counter()
     target_result = await target(state)
@@ -251,37 +229,37 @@ async def send_message(
     )
 
     # 8. Broadcast: target responded
-    await broadcast_playground(cid, {
-        "type": "pg_processing",
-        "conversation_id": cid,
-        "message_number": msg_num,
-        "data": {
-            "phase": "target_responded",
-            "target_response": target_result.get(
-                "target_response", ""
-            ),
-            "target_blocked": target_result.get(
-                "target_blocked", False
-            ),
+    await broadcast_playground(
+        cid,
+        {
+            "type": "pg_processing",
+            "conversation_id": cid,
+            "message_number": msg_num,
+            "data": {
+                "phase": "target_responded",
+                "target_response": target_result.get("target_response", ""),
+                "target_blocked": target_result.get("target_blocked", False),
+            },
         },
-    })
+    )
 
     # 9. Run analyzer pipeline
-    await broadcast_playground(cid, {
-        "type": "pg_processing",
-        "conversation_id": cid,
-        "message_number": msg_num,
-        "data": {"phase": "analyzing"},
-    })
+    await broadcast_playground(
+        cid,
+        {
+            "type": "pg_processing",
+            "conversation_id": cid,
+            "message_number": msg_num,
+            "data": {"phase": "analyzing"},
+        },
+    )
 
     t1 = time.perf_counter()
     analysis = await _run_analysis(
         provider=provider,
         model=conversation.analyzer_model,
         attack_prompt=body.prompt,
-        target_response=target_result.get(
-            "target_response", ""
-        ),
+        target_response=target_result.get("target_response", ""),
     )
     analyzer_latency = (time.perf_counter() - t1) * 1000
 
@@ -294,29 +272,17 @@ async def send_message(
         conversation_id=conversation_id,
         message_number=msg_num,
         user_prompt=body.prompt,
-        target_response=target_result.get(
-            "target_response", ""
-        ),
-        raw_target_response=target_result.get(
-            "raw_target_response"
-        ),
-        target_blocked=target_result.get(
-            "target_blocked", False
-        ),
+        target_response=target_result.get("target_response", ""),
+        raw_target_response=target_result.get("raw_target_response"),
+        target_blocked=target_result.get("target_blocked", False),
         blocked_by_defense=blocked_by,
         block_reason=block_reason,
         defenses_applied=conversation.active_defenses,
-        judge_verdict=analysis.get(
-            "judge_verdict", JudgeVerdict.ERROR
-        ).value,
-        judge_confidence=analysis.get(
-            "judge_confidence", 0.0
-        ),
+        judge_verdict=analysis.get("judge_verdict", JudgeVerdict.ERROR).value,
+        judge_confidence=analysis.get("judge_confidence", 0.0),
         severity_score=analysis.get("severity_score"),
         specificity_score=analysis.get("specificity_score"),
-        vulnerability_category=analysis.get(
-            "vulnerability_category"
-        ),
+        vulnerability_category=analysis.get("vulnerability_category"),
         attack_technique=analysis.get("attack_technique"),
         target_tokens=target_tokens,
         analyzer_tokens=analyzer_tokens,
@@ -325,55 +291,39 @@ async def send_message(
     )
 
     # 12. Update conversation aggregate stats
-    verdict = analysis.get(
-        "judge_verdict", JudgeVerdict.ERROR
-    )
-    new_jailbreaks = (
-        1 if verdict == JudgeVerdict.JAILBREAK else 0
-    )
-    new_blocked = (
-        1 if target_result.get("target_blocked") else 0
-    )
+    verdict = analysis.get("judge_verdict", JudgeVerdict.ERROR)
+    new_jailbreaks = 1 if verdict == JudgeVerdict.JAILBREAK else 0
+    new_blocked = 1 if target_result.get("target_blocked") else 0
     await repo.update_conversation(
         conversation_id,
         total_messages=msg_num,
-        total_jailbreaks=(
-            conversation.total_jailbreaks + new_jailbreaks
-        ),
-        total_blocked=(
-            conversation.total_blocked + new_blocked
-        ),
-        total_target_tokens=(
-            conversation.total_target_tokens + target_tokens
-        ),
-        total_analyzer_tokens=(
-            conversation.total_analyzer_tokens
-            + analyzer_tokens
-        ),
+        total_jailbreaks=(conversation.total_jailbreaks + new_jailbreaks),
+        total_blocked=(conversation.total_blocked + new_blocked),
+        total_target_tokens=(conversation.total_target_tokens + target_tokens),
+        total_analyzer_tokens=(conversation.total_analyzer_tokens + analyzer_tokens),
     )
 
     # 13. Broadcast: complete
     response = PlaygroundMessageResponse.model_validate(message)
-    await broadcast_playground(cid, {
-        "type": "pg_message_complete",
-        "conversation_id": cid,
-        "message_number": msg_num,
-        "data": response.model_dump(mode="json"),
-    })
+    await broadcast_playground(
+        cid,
+        {
+            "type": "pg_message_complete",
+            "conversation_id": cid,
+            "message_number": msg_num,
+            "data": response.model_dump(mode="json"),
+        },
+    )
 
     return response
 
 
 # Helpers
 
-_BLOCK_PATTERN = re.compile(
-    r"\[(BLOCKED|OUTPUT FILTERED) by (\w+):\s*([^\]]+)\]"
-)
+_BLOCK_PATTERN = re.compile(r"\[(BLOCKED|OUTPUT FILTERED) by (\w+):\s*([^\]]+)\]")
 
 
-def _parse_block_info(
-    response: str, blocked: bool
-) -> tuple[str | None, str | None]:
+def _parse_block_info(response: str, blocked: bool) -> tuple[str | None, str | None]:
     """Extract defense name and reason from block messages."""
     if not blocked:
         return None, None
@@ -389,14 +339,10 @@ def _build_conversation_history(
     """Build chat history from prior PlaygroundMessages."""
     history: list[dict[str, str]] = []
     for msg in messages:
-        history.append(
-            {"role": "user", "content": msg.user_prompt}
-        )
+        history.append({"role": "user", "content": msg.user_prompt})
         # Use raw response if available (unblocked version)
         content = msg.raw_target_response or msg.target_response
-        history.append(
-            {"role": "assistant", "content": content}
-        )
+        history.append({"role": "assistant", "content": content})
     return history
 
 
@@ -416,9 +362,7 @@ def _instantiate_defenses(
                 params["provider"] = provider
             defenses.append(cls(**params))
         except (KeyError, TypeError):
-            logger.warning(
-                "pg_defense_instantiation_failed", name=name
-            )
+            logger.warning("pg_defense_instantiation_failed", name=name)
     return defenses
 
 
@@ -443,13 +387,9 @@ async def _run_analysis(
     # Extract judge tokens from token_budget
     token_budget = judge_result.pop("token_budget", None)
     if token_budget is not None:
-        total_tokens += getattr(
-            token_budget, "total_analyzer_tokens", 0
-        )
+        total_tokens += getattr(token_budget, "total_analyzer_tokens", 0)
 
-    verdict = judge_result.get(
-        "judge_verdict", JudgeVerdict.ERROR
-    )
+    verdict = judge_result.get("judge_verdict", JudgeVerdict.ERROR)
     result: dict[str, Any] = {**judge_result}
 
     # Step 2 & 3: Classifier + Scorer (jailbreak/borderline)

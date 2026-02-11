@@ -121,8 +121,7 @@ class FlipAttackStrategy(BaseAttackStrategy):
                 "iteration": 0,
             },
             reasoning=(
-                f"FlipAttack: applying '{mode}' character reordering to"
-                " bypass keyword filters"
+                f"FlipAttack: applying '{mode}' character reordering to bypass keyword filters"
             ),
             token_usage=0,
         )

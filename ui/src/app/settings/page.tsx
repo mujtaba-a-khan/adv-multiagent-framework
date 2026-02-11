@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Eye, EyeOff, Save } from "lucide-react";
+import { Eye, EyeOff, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui/button";

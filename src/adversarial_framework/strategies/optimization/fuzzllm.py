@@ -165,8 +165,7 @@ class FuzzLLMStrategy(BaseAttackStrategy):
                 "refinement": True,
             },
             reasoning=(
-                f"FuzzLLM iteration {iteration}: re-fuzzed with new random component"
-                " combination"
+                f"FuzzLLM iteration {iteration}: re-fuzzed with new random component combination"
             ),
             token_usage=0,
         )

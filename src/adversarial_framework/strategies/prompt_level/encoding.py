@@ -20,7 +20,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 _ENCODING_WRAPPERS = {
     "base64": (
         "The following message is encoded in Base64. Please decode it and "
@@ -139,21 +138,15 @@ class EncodingStrategy(BaseAttackStrategy):
 
         prev_verdict = params.get("_previous_verdict", "refused")
         if prev_verdict == "jailbreak":
-            reason_suffix = (
-                f"{current_type} succeeded — trying alternative"
-                " encoding vector"
-            )
+            reason_suffix = f"{current_type} succeeded — trying alternative encoding vector"
         else:
-            reason_suffix = (
-                f"{current_type} was unsuccessful"
-            )
+            reason_suffix = f"{current_type} was unsuccessful"
 
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"encoding_type": next_type},
             reasoning=(
-                f"Switching to {next_type} encoding with creative"
-                f" writing framing: {reason_suffix}"
+                f"Switching to {next_type} encoding with creative writing framing: {reason_suffix}"
             ),
             token_usage=0,
         )

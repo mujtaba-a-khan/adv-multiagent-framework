@@ -12,19 +12,20 @@ Graph topology::
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
 
-from langgraph.graph import StateGraph, END
+import structlog
+from langgraph.graph import END, StateGraph
 
-from adversarial_framework.agents.attacker.agent import AttackerAgent
 from adversarial_framework.agents.analyzer.agent import AnalyzerAgent
+from adversarial_framework.agents.attacker.agent import AttackerAgent
 from adversarial_framework.agents.defender.agent import DefenderAgent
 from adversarial_framework.agents.target.interface import TargetInterface
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.constants import (
     ANALYZER_NODE,
     ATTACKER_NODE,
+    DEFAULT_MAX_ERRORS,
     DEFENDER_NODE,
     FINALIZE_NODE,
     INITIALIZE_NODE,
@@ -35,7 +36,6 @@ from adversarial_framework.core.constants import (
     DefenseType,
     JudgeVerdict,
     SessionStatus,
-    DEFAULT_MAX_ERRORS,
 )
 from adversarial_framework.core.state import (
     AdversarialState,
@@ -175,6 +175,7 @@ def _build_history_recorder() -> Any:
 
 
 # Defense Application
+
 
 def _build_defense_applicator(
     target: TargetInterface,
@@ -321,6 +322,7 @@ def _load_initial_defenses(
 
 # Graph Builder
 
+
 def build_graph(
     provider: BaseProvider,
     attacker_config: dict[str, Any] | None = None,
@@ -363,12 +365,17 @@ def build_graph(
     # Load pre-configured defenses for defense mode
     if session_mode == "defense" and initial_defenses:
         _load_initial_defenses(
-            target, initial_defenses, provider, defense_model,
+            target,
+            initial_defenses,
+            provider,
+            defense_model,
         )
 
     record_history = _build_history_recorder()
     apply_defenses = _build_defense_applicator(
-        target, provider=provider, defense_model=defense_model,
+        target,
+        provider=provider,
+        defense_model=defense_model,
     )
     router = _build_router(max_turns=max_turns, max_cost_usd=max_cost_usd)
 

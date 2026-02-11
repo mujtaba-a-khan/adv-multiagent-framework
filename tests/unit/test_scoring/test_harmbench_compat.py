@@ -107,16 +107,28 @@ class TestComputeHarmBenchASR:
     def test_mixed_results(self) -> None:
         results = [
             HarmBenchResult(
-                behavior_id="B1", test_case="tc", generation="gen",
-                label=1, method="pair", model="m",
+                behavior_id="B1",
+                test_case="tc",
+                generation="gen",
+                label=1,
+                method="pair",
+                model="m",
             ),
             HarmBenchResult(
-                behavior_id="B2", test_case="tc", generation="gen",
-                label=0, method="pair", model="m",
+                behavior_id="B2",
+                test_case="tc",
+                generation="gen",
+                label=0,
+                method="pair",
+                model="m",
             ),
             HarmBenchResult(
-                behavior_id="B3", test_case="tc", generation="gen",
-                label=1, method="encoding", model="m",
+                behavior_id="B3",
+                test_case="tc",
+                generation="gen",
+                label=1,
+                method="encoding",
+                model="m",
             ),
         ]
         asr = compute_harmbench_asr(results)
@@ -127,16 +139,28 @@ class TestComputeHarmBenchASR:
     def test_per_method_breakdown(self) -> None:
         results = [
             HarmBenchResult(
-                behavior_id="B1", test_case="tc", generation="gen",
-                label=1, method="pair", model="m",
+                behavior_id="B1",
+                test_case="tc",
+                generation="gen",
+                label=1,
+                method="pair",
+                model="m",
             ),
             HarmBenchResult(
-                behavior_id="B2", test_case="tc", generation="gen",
-                label=0, method="pair", model="m",
+                behavior_id="B2",
+                test_case="tc",
+                generation="gen",
+                label=0,
+                method="pair",
+                model="m",
             ),
             HarmBenchResult(
-                behavior_id="B3", test_case="tc", generation="gen",
-                label=1, method="encoding", model="m",
+                behavior_id="B3",
+                test_case="tc",
+                generation="gen",
+                label=1,
+                method="encoding",
+                model="m",
             ),
         ]
         asr = compute_harmbench_asr(results)

@@ -65,17 +65,13 @@ async def run_abliterate(
 
     # Step 1: Memory check
     await on_progress(0.0, "Checking memory feasibility")
-    feasible, reason = check_memory_feasibility(
-        source_model, "abliterate"
-    )
+    feasible, reason = check_memory_feasibility(source_model, "abliterate")
     if not feasible:
         raise RuntimeError(f"Insufficient memory: {reason}")
 
     # Step 1b: Disk space check
     await on_progress(1.0, "Checking disk space")
-    feasible, reason = check_disk_feasibility(
-        source_model, "abliterate"
-    )
+    feasible, reason = check_disk_feasibility(source_model, "abliterate")
     if not feasible:
         raise RuntimeError(f"Insufficient disk space: {reason}")
 
@@ -99,9 +95,7 @@ async def run_abliterate(
 
     work_dir = Path(tempfile.mkdtemp(prefix="adv-abliterate-"))
     try:
-        tokenizer = await asyncio.to_thread(
-            AutoTokenizer.from_pretrained, source_model
-        )
+        tokenizer = await asyncio.to_thread(AutoTokenizer.from_pretrained, source_model)
         model = await asyncio.to_thread(
             AutoModelForCausalLM.from_pretrained,
             source_model,
@@ -120,16 +114,23 @@ async def run_abliterate(
         await on_progress(30.0, "Computing refusal direction")
         refusal_dir = await asyncio.to_thread(
             _compute_refusal_direction,
-            model, tokenizer, harmful_prompts, harmless_prompts,
-            layer_start, layer_end,
+            model,
+            tokenizer,
+            harmful_prompts,
+            harmless_prompts,
+            layer_start,
+            layer_end,
         )
         await on_progress(55.0, "Refusal direction computed")
 
         # Step 5: Apply abliteration
         await on_progress(60.0, "Applying abliteration to weights")
         await asyncio.to_thread(
-            _apply_abliteration, model, refusal_dir,
-            layer_start, layer_end,
+            _apply_abliteration,
+            model,
+            refusal_dir,
+            layer_start,
+            layer_end,
         )
         await on_progress(70.0, "Abliteration applied")
 
@@ -137,9 +138,7 @@ async def run_abliterate(
         save_path = work_dir / "abliterated"
         await on_progress(72.0, "Saving modified model")
         await asyncio.to_thread(model.save_pretrained, str(save_path))
-        await asyncio.to_thread(
-            tokenizer.save_pretrained, str(save_path)
-        )
+        await asyncio.to_thread(tokenizer.save_pretrained, str(save_path))
         await on_progress(78.0, "Model saved")
 
         # Free model from memory
@@ -216,7 +215,8 @@ def _compute_refusal_direction(
             }
             with torch.no_grad():
                 outputs = model(  # type: ignore[operator]
-                    **inputs, output_hidden_states=True,
+                    **inputs,
+                    output_hidden_states=True,
                 )
             # Average last-token activations across target layers
             layer_acts = []
@@ -262,9 +262,7 @@ def _apply_abliteration(
             continue
         if param.dim() != 2:
             continue
-        if not any(
-            k in name for k in ["o_proj", "down_proj", "out_proj"]
-        ):
+        if not any(k in name for k in ["o_proj", "down_proj", "out_proj"]):
             continue
 
         # Extract layer number and skip layers outside target range
@@ -293,9 +291,7 @@ async def _stop_ollama_models(ollama_base_url: str) -> None:
     """Stop all currently loaded Ollama models to free memory."""
     import httpx
 
-    async with httpx.AsyncClient(
-        base_url=ollama_base_url, timeout=30.0
-    ) as client:
+    async with httpx.AsyncClient(base_url=ollama_base_url, timeout=30.0) as client:
         try:
             resp = await client.get("/api/ps")
             if resp.status_code == 200:
@@ -312,5 +308,3 @@ async def _stop_ollama_models(ollama_base_url: str) -> None:
                         )
         except Exception:
             pass  # Best-effort cleanup
-
-

@@ -52,6 +52,7 @@ class _FineTuningJobSnapshot:
             config=dict(job.config) if job.config else {},
         )
 
+
 # CRUD
 
 
@@ -77,9 +78,7 @@ async def list_jobs(
     limit: int = 50,
     status: str | None = None,
 ) -> FineTuningJobListResponse:
-    jobs, total = await repo.list_all(
-        offset=offset, limit=limit, status=status
-    )
+    jobs, total = await repo.list_all(offset=offset, limit=limit, status=status)
     return FineTuningJobListResponse(
         jobs=[FineTuningJobResponse.model_validate(j) for j in jobs],
         total=total,
@@ -106,13 +105,11 @@ async def delete_job(
     if job is None:
         raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     if job.status == "running":
-        raise HTTPException(
-            status_code=409, detail="Cannot delete a running job"
-        )
+        raise HTTPException(status_code=409, detail="Cannot delete a running job")
     await repo.delete(job_id)
 
 
-#Start / Cancel
+# Start / Cancel
 
 
 @router.post("/jobs/{job_id}/start")
@@ -163,9 +160,7 @@ async def cancel_job(
     if job is None:
         raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     if job.status != "running":
-        raise HTTPException(
-            status_code=409, detail="Job is not running"
-        )
+        raise HTTPException(status_code=409, detail="Job is not running")
 
     request_cancellation(str(job_id))
     return FineTuningJobResponse.model_validate(job)
@@ -213,9 +208,7 @@ async def delete_model(
 ) -> None:
     """Delete a model from Ollama."""
     try:
-        await provider._client.delete(
-            "/api/delete", json={"name": model_name}
-        )
+        await provider._client.delete("/api/delete", json={"name": model_name})
     except Exception as exc:
         raise HTTPException(
             status_code=500,

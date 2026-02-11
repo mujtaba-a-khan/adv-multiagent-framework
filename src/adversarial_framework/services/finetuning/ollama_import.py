@@ -37,13 +37,13 @@ _CONVERTER_SCRIPT = _CONVERTER_DIR / "convert_hf_to_gguf.py"
 # Must match the installed gguf PyPI package version — master
 # may use imports that don't exist in the published package yet.
 _CONVERTER_URL = (
-    "https://raw.githubusercontent.com/ggml-org/llama.cpp/"
-    "381174bbdaf1/convert_hf_to_gguf.py"
+    "https://raw.githubusercontent.com/ggml-org/llama.cpp/381174bbdaf1/convert_hf_to_gguf.py"
 )
 
 
 async def _ensure_gguf_converter(
-    *, force: bool = False,
+    *,
+    force: bool = False,
 ) -> Path:
     """Download convert_hf_to_gguf.py from llama.cpp if not cached.
 
@@ -57,16 +57,19 @@ async def _ensure_gguf_converter(
     logger.info("downloading_gguf_converter", url=_CONVERTER_URL)
 
     async with httpx.AsyncClient(
-        timeout=60.0, follow_redirects=True,
+        timeout=60.0,
+        follow_redirects=True,
     ) as client:
         resp = await client.get(_CONVERTER_URL)
         resp.raise_for_status()
 
     await asyncio.to_thread(
-        _CONVERTER_SCRIPT.write_text, resp.text,
+        _CONVERTER_SCRIPT.write_text,
+        resp.text,
     )
     logger.info(
-        "gguf_converter_cached", path=str(_CONVERTER_SCRIPT),
+        "gguf_converter_cached",
+        path=str(_CONVERTER_SCRIPT),
     )
     return _CONVERTER_SCRIPT
 
@@ -127,19 +130,22 @@ async def _convert_hf_to_gguf(
     )
 
     code, _, err = await _run_converter(
-        converter, model_dir, gguf_path,
+        converter,
+        model_dir,
+        gguf_path,
     )
 
     # Retry once if the cached script is stale (import errors)
-    if code != 0 and (
-        "ImportError" in err or "ModuleNotFoundError" in err
-    ):
+    if code != 0 and ("ImportError" in err or "ModuleNotFoundError" in err):
         logger.warning(
-            "converter_stale_redownloading", error=err[:200],
+            "converter_stale_redownloading",
+            error=err[:200],
         )
         converter = await _ensure_gguf_converter(force=True)
         code, _, err = await _run_converter(
-            converter, model_dir, gguf_path,
+            converter,
+            model_dir,
+            gguf_path,
         )
 
     if code != 0:
@@ -147,9 +153,7 @@ async def _convert_hf_to_gguf(
         msg = err.strip()
         if len(msg) > 500:
             msg = msg[-500:]
-        raise RuntimeError(
-            f"GGUF conversion failed (exit {code}): {msg}"
-        )
+        raise RuntimeError(f"GGUF conversion failed (exit {code}): {msg}")
 
     gguf_gb = gguf_path.stat().st_size / (1024**3)
     logger.info(
@@ -157,7 +161,8 @@ async def _convert_hf_to_gguf(
         gguf_size_gb=f"{gguf_gb:.1f}",
     )
     await on_progress(
-        88.0, f"GGUF created ({gguf_gb:.1f} GB)",
+        88.0,
+        f"GGUF created ({gguf_gb:.1f} GB)",
     )
 
 
@@ -178,17 +183,22 @@ async def _create_ollama_model(
     """
     modelfile = gguf_path.parent / "Modelfile"
     await asyncio.to_thread(
-        modelfile.write_text, f"FROM {gguf_path}\n",
+        modelfile.write_text,
+        f"FROM {gguf_path}\n",
     )
 
     q_label = f" ({quantize})" if quantize else ""
     await on_progress(
-        90.0, f"Creating {model_name}{q_label}",
+        90.0,
+        f"Creating {model_name}{q_label}",
     )
 
     cmd = [
-        "ollama", "create", model_name,
-        "-f", str(modelfile),
+        "ollama",
+        "create",
+        model_name,
+        "-f",
+        str(modelfile),
     ]
     if quantize:
         cmd.extend(["--quantize", quantize])
@@ -211,9 +221,7 @@ async def _create_ollama_model(
         err = raw_err.decode(errors="replace").strip()
         if not err:
             err = raw_out.decode(errors="replace").strip()
-        raise RuntimeError(
-            f"ollama create failed (exit {code}): {err}"
-        )
+        raise RuntimeError(f"ollama create failed (exit {code}): {err}")
 
     logger.info(
         "ollama_create_complete",
@@ -250,17 +258,17 @@ async def import_to_ollama(
     try:
         # 1. Convert to GGUF
         await _convert_hf_to_gguf(
-            model_dir, gguf_path, on_progress,
+            model_dir,
+            gguf_path,
+            on_progress,
         )
 
         # 2. Free source safetensors
-        src_bytes = sum(
-            f.stat().st_size
-            for f in model_dir.iterdir()
-            if f.is_file()
-        )
+        src_bytes = sum(f.stat().st_size for f in model_dir.iterdir() if f.is_file())
         await asyncio.to_thread(
-            shutil.rmtree, str(model_dir), True,
+            shutil.rmtree,
+            str(model_dir),
+            True,
         )
         logger.info(
             "source_files_freed",
@@ -269,7 +277,9 @@ async def import_to_ollama(
 
         # 3. Create Ollama model
         await _create_ollama_model(
-            gguf_path, model_name, on_progress,
+            gguf_path,
+            model_name,
+            on_progress,
             quantize=quantize,
         )
 
@@ -278,23 +288,26 @@ async def import_to_ollama(
         if gguf_path.exists():
             gb = gguf_path.stat().st_size / (1024**3)
             await asyncio.to_thread(
-                gguf_path.unlink, missing_ok=True,
+                gguf_path.unlink,
+                missing_ok=True,
             )
             logger.info(
-                "gguf_file_freed", freed_gb=f"{gb:.1f}",
+                "gguf_file_freed",
+                freed_gb=f"{gb:.1f}",
             )
 
     # 5. Verify model
     async with httpx.AsyncClient(
-        base_url=ollama_base_url, timeout=30.0,
+        base_url=ollama_base_url,
+        timeout=30.0,
     ) as client:
         resp = await client.post(
-            "/api/show", json={"name": model_name},
+            "/api/show",
+            json={"name": model_name},
         )
         if resp.status_code != 200:
             raise RuntimeError(
-                f"Model '{model_name}' not found in Ollama "
-                "after create reported success"
+                f"Model '{model_name}' not found in Ollama after create reported success"
             )
 
     await on_progress(100.0, "Model imported into Ollama")
@@ -306,6 +319,7 @@ async def import_to_ollama(
 
 
 # Disk management helpers
+
 
 def _sum_blob_sizes(blobs_dir: Path) -> int:
     """Sum file sizes of all blobs in the directory."""
@@ -319,7 +333,8 @@ def _sum_blob_sizes(blobs_dir: Path) -> int:
 
 
 def _find_orphan_stats(
-    blobs_dir: Path, referenced: set[str],
+    blobs_dir: Path,
+    referenced: set[str],
 ) -> tuple[int, int]:
     """Count orphan blobs and their total size in bytes."""
     count = 0
@@ -355,17 +370,13 @@ def get_disk_status() -> dict:
         disk_free_gb = 0.0
 
     # Ollama storage total
-    ollama_total_bytes = (
-        _sum_blob_sizes(blobs_dir) if blobs_dir.exists() else 0
-    )
+    ollama_total_bytes = _sum_blob_sizes(blobs_dir) if blobs_dir.exists() else 0
     ollama_total_gb = round(ollama_total_bytes / (1024**3), 1)
 
     # Count orphan blobs
     referenced = _collect_referenced_digests(manifests_dir)
     orphan_count, orphan_bytes = (
-        _find_orphan_stats(blobs_dir, referenced)
-        if blobs_dir.exists()
-        else (0, 0)
+        _find_orphan_stats(blobs_dir, referenced) if blobs_dir.exists() else (0, 0)
     )
 
     return {
@@ -462,7 +473,8 @@ async def rename_ollama_model(
     await on_progress(90.0, f"Renaming model to {target_name}")
 
     async with httpx.AsyncClient(
-        base_url=ollama_base_url, timeout=300.0,
+        base_url=ollama_base_url,
+        timeout=300.0,
     ) as client:
         resp = await client.post(
             "/api/create",

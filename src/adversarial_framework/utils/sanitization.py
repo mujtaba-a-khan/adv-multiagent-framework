@@ -140,9 +140,7 @@ def sanitize_for_storage(
             modified = True
             result = marked
 
-    return SanitizationResult(
-        text=result, modified=modified, redactions=all_redactions
-    )
+    return SanitizationResult(text=result, modified=modified, redactions=all_redactions)
 
 
 def sanitize_log_data(data: dict[str, Any], max_length: int = 500) -> dict[str, Any]:

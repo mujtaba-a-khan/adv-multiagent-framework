@@ -7,8 +7,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-
 # Experiments
+
 
 class ExperimentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -37,6 +37,7 @@ class ExperimentListResponse(BaseModel):
 
 
 # Sessions
+
 
 class SessionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -72,6 +73,7 @@ class SessionListResponse(BaseModel):
 
 
 # Turns
+
 
 class TurnResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -126,6 +128,7 @@ class StrategyListResponse(BaseModel):
 
 # Targets / Models
 
+
 class ModelListResponse(BaseModel):
     models: list[str]
     provider: str
@@ -137,6 +140,7 @@ class HealthResponse(BaseModel):
 
 
 # Defenses
+
 
 class DefenseInfoResponse(BaseModel):
     """Metadata for a single registered defense mechanism."""
@@ -153,6 +157,7 @@ class DefenseListResponse(BaseModel):
 
 # Comparisons
 
+
 class SessionComparisonResponse(BaseModel):
     """Side-by-side comparison of an attack and defense session."""
 
@@ -163,6 +168,7 @@ class SessionComparisonResponse(BaseModel):
 
 
 # Fine-Tuning Jobs
+
 
 class FineTuningJobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

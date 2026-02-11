@@ -44,7 +44,6 @@ htmlcov/
 .coverage.*
 .cache
 nosetests.xml
-coverage.xml
 *.cover
 *.py.cover
 .hypothesis/
@@ -232,5 +231,4 @@ notebooks
 prompt_templates
 
 #Test Suite
-tests/
 ui/src/ui-tests/

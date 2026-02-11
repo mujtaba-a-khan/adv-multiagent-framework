@@ -7,7 +7,6 @@ jailbreak patterns, encoding attempts, and harmful keyword combinations.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from adversarial_framework.defenses.base import BaseDefense, DefenseCheckResult
 from adversarial_framework.defenses.registry import DefenseRegistry
@@ -16,16 +15,44 @@ from adversarial_framework.defenses.registry import DefenseRegistry
 
 _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("DAN_pattern", re.compile(r"\bDAN\b.*(?:do anything|no restrictions|ignore)", re.I | re.S)),
-    ("jailbreak_directive", re.compile(r"(?:ignore|disregard|forget).*(?:previous|above|prior)\s*(?:instructions|rules|guidelines)", re.I | re.S)),
-    ("roleplay_bypass", re.compile(r"(?:pretend|imagine|act as if).*(?:no (?:rules|restrictions|limitations|filters|safety))", re.I | re.S)),
+    (
+        "jailbreak_directive",
+        re.compile(
+            r"(?:ignore|disregard|forget).*(?:previous|above|prior)\s*(?:instructions|rules|guidelines)",
+            re.I | re.S,
+        ),
+    ),
+    (
+        "roleplay_bypass",
+        re.compile(
+            r"(?:pretend|imagine|act as if).*"
+            r"(?:no (?:rules|restrictions|limitations|filters|safety))",
+            re.I | re.S,
+        ),
+    ),
     ("base64_payload", re.compile(r"(?:decode|base64|aW1wb3J0|ZXhwbG9pdA)", re.I)),
     ("rot13_marker", re.compile(r"\brot13\b", re.I)),
-    ("system_prompt_extract", re.compile(r"(?:reveal|show|repeat|print|output).*(?:system\s*prompt|instructions|initial\s*prompt)", re.I | re.S)),
-    ("encoding_instruction", re.compile(r"(?:encode|decrypt|translate).*(?:base64|rot13|caesar|hex)", re.I | re.S)),
+    (
+        "system_prompt_extract",
+        re.compile(
+            r"(?:reveal|show|repeat|print|output).*(?:system\s*prompt|instructions|initial\s*prompt)",
+            re.I | re.S,
+        ),
+    ),
+    (
+        "encoding_instruction",
+        re.compile(r"(?:encode|decrypt|translate).*(?:base64|rot13|caesar|hex)", re.I | re.S),
+    ),
 ]
 
 _OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("harmful_compliance", re.compile(r"(?:sure|okay|of course|here(?:'s| is)).*(?:how to|steps to|instructions for)", re.I | re.S)),
+    (
+        "harmful_compliance",
+        re.compile(
+            r"(?:sure|okay|of course|here(?:'s| is)).*(?:how to|steps to|instructions for)",
+            re.I | re.S,
+        ),
+    ),
 ]
 
 

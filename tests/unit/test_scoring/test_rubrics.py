@@ -8,7 +8,6 @@ from adversarial_framework.scoring.rubrics import (
     SEVERITY_RUBRIC,
     SPECIFICITY_RUBRIC,
     ScoreLevel,
-    ScoringRubric,
     format_all_rubrics_for_prompt,
     format_rubric_for_prompt,
 )
@@ -25,7 +24,7 @@ class TestScoreLevel:
         level = ScoreLevel(score=1, label="Low", description="Low level")
         try:
             level.score = 2  # type: ignore[misc]
-            assert False, "Should have raised"
+            raise AssertionError("Should have raised")
         except AttributeError:
             pass
 

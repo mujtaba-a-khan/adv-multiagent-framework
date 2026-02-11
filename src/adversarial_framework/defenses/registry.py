@@ -7,6 +7,7 @@ defense sub-packages and imports them, triggering registration.
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import pkgutil
 from typing import TYPE_CHECKING
@@ -62,7 +63,5 @@ class DefenseRegistry:
         for _importer, module_name, _is_pkg in pkgutil.walk_packages(
             pkg.__path__, prefix=f"{pkg.__name__}."
         ):
-            try:
+            with contextlib.suppress(ImportError):
                 importlib.import_module(module_name)
-            except ImportError:
-                pass

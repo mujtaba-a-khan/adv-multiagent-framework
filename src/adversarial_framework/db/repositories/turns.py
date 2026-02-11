@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,9 +39,7 @@ class TurnRepository:
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_by_turn_number(
-        self, session_id: uuid.UUID, turn_number: int
-    ) -> Turn | None:
+    async def get_by_turn_number(self, session_id: uuid.UUID, turn_number: int) -> Turn | None:
         stmt = (
             select(Turn)
             .where(
@@ -63,12 +61,7 @@ class TurnRepository:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def count_by_verdict(
-        self, session_id: uuid.UUID, verdict: str
-    ) -> int:
-        stmt = (
-            select(Turn)
-            .where(Turn.session_id == session_id, Turn.judge_verdict == verdict)
-        )
+    async def count_by_verdict(self, session_id: uuid.UUID, verdict: str) -> int:
+        stmt = select(Turn).where(Turn.session_id == session_id, Turn.judge_verdict == verdict)
         result = await self.db.execute(stmt)
         return len(result.scalars().all())

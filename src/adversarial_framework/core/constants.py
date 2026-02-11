@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from enum import Enum
 
-
 # Session & Execution Status
+
 
 class SessionStatus(str, Enum):
     """Status of an adversarial session."""
@@ -29,6 +29,7 @@ class JudgeVerdict(str, Enum):
 
 # Attack Strategy Categories
 
+
 class AttackCategory(str, Enum):
     """Top-level category for attack strategies."""
 
@@ -40,6 +41,7 @@ class AttackCategory(str, Enum):
 
 
 # Defense Types
+
 
 class SessionMode(str, Enum):
     """Mode of a session: attack-only or defense-enabled."""

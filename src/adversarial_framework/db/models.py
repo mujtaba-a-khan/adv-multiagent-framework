@@ -7,7 +7,7 @@ columns use pgvector's ``Vector`` type for similarity search.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
@@ -37,9 +37,7 @@ class Experiment(Base):
 
     __tablename__ = "experiments"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -63,9 +61,7 @@ class Experiment(Base):
     max_cost_usd: Mapped[float] = mapped_column(Float, default=10.0)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -84,9 +80,7 @@ class Session(Base):
 
     __tablename__ = "sessions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False
     )
@@ -118,15 +112,9 @@ class Session(Base):
     estimated_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
 
     # Timestamps
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     experiment: Mapped[Experiment] = relationship(back_populates="sessions")
@@ -146,9 +134,7 @@ class Turn(Base):
 
     __tablename__ = "turns"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
     )
@@ -182,9 +168,7 @@ class Turn(Base):
     analyzer_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     session: Mapped[Session] = relationship(back_populates="turns")
@@ -198,9 +182,7 @@ class DefenseActionRecord(Base):
 
     __tablename__ = "defense_actions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
     )
@@ -213,9 +195,7 @@ class DefenseActionRecord(Base):
     false_positive_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     session: Mapped[Session] = relationship(back_populates="defense_actions")
@@ -229,9 +209,7 @@ class PlaygroundConversation(Base):
 
     __tablename__ = "playground_conversations"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Target configuration
@@ -243,9 +221,7 @@ class PlaygroundConversation(Base):
     analyzer_model: Mapped[str] = mapped_column(String(128), nullable=False)
 
     # Active defenses (JSON array of {name, params})
-    active_defenses: Mapped[list] = mapped_column(
-        JSON, default=list, nullable=False
-    )
+    active_defenses: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
 
     # Aggregate stats (denormalized for fast sidebar display)
     total_messages: Mapped[int] = mapped_column(Integer, default=0)
@@ -255,9 +231,7 @@ class PlaygroundConversation(Base):
     total_analyzer_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
@@ -275,9 +249,7 @@ class PlaygroundMessage(Base):
 
     __tablename__ = "playground_messages"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("playground_conversations.id", ondelete="CASCADE"),
@@ -290,37 +262,23 @@ class PlaygroundMessage(Base):
 
     # Target response
     target_response: Mapped[str] = mapped_column(Text, nullable=False)
-    raw_target_response: Mapped[str | None] = mapped_column(
-        Text, nullable=True
-    )
+    raw_target_response: Mapped[str | None] = mapped_column(Text, nullable=True)
     target_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Defense feedback
-    blocked_by_defense: Mapped[str | None] = mapped_column(
-        String(64), nullable=True
-    )
+    blocked_by_defense: Mapped[str | None] = mapped_column(String(64), nullable=True)
     block_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Defense snapshot (which defenses were active when processed)
-    defenses_applied: Mapped[list | None] = mapped_column(
-        JSON, nullable=True, default=None
-    )
+    defenses_applied: Mapped[list | None] = mapped_column(JSON, nullable=True, default=None)
 
     # Analysis
     judge_verdict: Mapped[str] = mapped_column(String(32), nullable=False)
     judge_confidence: Mapped[float] = mapped_column(Float, default=0.0)
-    severity_score: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    specificity_score: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    vulnerability_category: Mapped[str | None] = mapped_column(
-        String(64), nullable=True
-    )
-    attack_technique: Mapped[str | None] = mapped_column(
-        String(64), nullable=True
-    )
+    severity_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    specificity_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    vulnerability_category: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    attack_technique: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Token usage
     target_tokens: Mapped[int] = mapped_column(Integer, default=0)
@@ -330,14 +288,10 @@ class PlaygroundMessage(Base):
     target_latency_ms: Mapped[float] = mapped_column(Float, default=0.0)
     analyzer_latency_ms: Mapped[float] = mapped_column(Float, default=0.0)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
-    conversation: Mapped[PlaygroundConversation] = relationship(
-        back_populates="messages"
-    )
+    conversation: Mapped[PlaygroundConversation] = relationship(back_populates="messages")
 
 
 # ── Vulnerability Catalog ────────────────────────────────────────────────────
@@ -357,14 +311,13 @@ class VulnerabilityCatalog(Base):
 
 # Fine-Tuning Jobs
 
+
 class FineTuningJob(Base):
     """A model fine-tuning or abliteration job."""
 
     __tablename__ = "finetuning_jobs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Job identity
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -374,9 +327,7 @@ class FineTuningJob(Base):
 
     # Source and output
     source_model: Mapped[str] = mapped_column(String(255), nullable=False)
-    output_model_name: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )
+    output_model_name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Job configuration (type-specific params stored as JSON)
     config: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -386,36 +337,22 @@ class FineTuningJob(Base):
         String(32), default="pending"
     )  # pending | running | completed | failed | cancelled
     progress_pct: Mapped[float] = mapped_column(Float, default=0.0)
-    current_step: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    current_step: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Logs (append-only JSON array of log entries)
     logs: Mapped[list] = mapped_column(JSON, default=list)
 
     # Error info
-    error_message: Mapped[str | None] = mapped_column(
-        Text, nullable=True
-    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Resource tracking
-    peak_memory_gb: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    total_duration_seconds: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
+    peak_memory_gb: Mapped[float | None] = mapped_column(Float, nullable=True)
+    total_duration_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Timestamps
-    started_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ── Session Reports ──────────────────────────────────────────────────────────
@@ -426,36 +363,32 @@ class SessionReport(Base):
 
     __tablename__ = "session_reports"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, unique=True
+        UUID(as_uuid=True),
+        ForeignKey("sessions.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
     )
 
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     findings: Mapped[dict] = mapped_column(JSON, default=dict)
     recommendations: Mapped[dict] = mapped_column(JSON, default=dict)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # Abliteration Dataset
+
 
 class AbliterationPrompt(Base):
     """A prompt in the abliteration dataset (harmful or harmless counterpart)."""
 
     __tablename__ = "abliteration_prompts"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    category: Mapped[str] = mapped_column(
-        String(16), nullable=False
-    )  # "harmful" | "harmless"
+    category: Mapped[str] = mapped_column(String(16), nullable=False)  # "harmful" | "harmless"
     source: Mapped[str] = mapped_column(
         String(32), default="manual"
     )  # "manual" | "upload" | "session"
@@ -479,6 +412,4 @@ class AbliterationPrompt(Base):
         nullable=True,
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

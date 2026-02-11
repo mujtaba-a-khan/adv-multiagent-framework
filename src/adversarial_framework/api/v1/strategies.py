@@ -43,12 +43,12 @@ async def get_strategy(strategy_name: str) -> StrategyResponse:
     StrategyRegistry.discover()
     try:
         cls = StrategyRegistry.get(strategy_name)
-    except KeyError:
+    except KeyError as err:
         raise HTTPException(
             status_code=404,
             detail=f"Strategy '{strategy_name}' not found. "
             f"Available: {StrategyRegistry.list_names()}",
-        )
+        ) from err
     m = cls.metadata
     return StrategyResponse(
         name=m.name,

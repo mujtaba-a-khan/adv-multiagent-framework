@@ -24,8 +24,8 @@ from adversarial_framework.scoring.rubrics import (
     COHERENCE_RUBRIC,
     SEVERITY_RUBRIC,
     SPECIFICITY_RUBRIC,
-    ScoringRubric,
     ScoreLevel,
+    ScoringRubric,
     format_all_rubrics_for_prompt,
     format_rubric_for_prompt,
 )

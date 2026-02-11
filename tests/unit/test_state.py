@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-from datetime import datetime, timezone
+from datetime import datetime
 
-from adversarial_framework.core.constants import JudgeVerdict, SessionStatus
+import pytest
+
+from adversarial_framework.core.constants import JudgeVerdict
 from adversarial_framework.core.state import (
-    AdversarialState,
     AttackTurn,
     DefenseAction,
     TokenBudget,
@@ -103,24 +103,40 @@ class TestReducers:
     def test_append_turns(self):
         existing = [
             AttackTurn(
-                turn_number=0, strategy_name="pair", strategy_params={},
-                attack_prompt="p0", target_response="r0",
-                judge_verdict=JudgeVerdict.REFUSED, confidence=0.5,
-                severity=1.0, specificity=1.0,
-                vulnerability_category=None, attack_technique=None,
-                target_blocked=False, attacker_tokens=0,
-                target_tokens=0, analyzer_tokens=0,
+                turn_number=0,
+                strategy_name="pair",
+                strategy_params={},
+                attack_prompt="p0",
+                target_response="r0",
+                judge_verdict=JudgeVerdict.REFUSED,
+                confidence=0.5,
+                severity=1.0,
+                specificity=1.0,
+                vulnerability_category=None,
+                attack_technique=None,
+                target_blocked=False,
+                attacker_tokens=0,
+                target_tokens=0,
+                analyzer_tokens=0,
             )
         ]
         new = [
             AttackTurn(
-                turn_number=1, strategy_name="pair", strategy_params={},
-                attack_prompt="p1", target_response="r1",
-                judge_verdict=JudgeVerdict.JAILBREAK, confidence=0.8,
-                severity=7.0, specificity=6.0,
-                vulnerability_category="jailbreak", attack_technique="pair",
-                target_blocked=False, attacker_tokens=100,
-                target_tokens=200, analyzer_tokens=80,
+                turn_number=1,
+                strategy_name="pair",
+                strategy_params={},
+                attack_prompt="p1",
+                target_response="r1",
+                judge_verdict=JudgeVerdict.JAILBREAK,
+                confidence=0.8,
+                severity=7.0,
+                specificity=6.0,
+                vulnerability_category="jailbreak",
+                attack_technique="pair",
+                target_blocked=False,
+                attacker_tokens=100,
+                target_tokens=200,
+                analyzer_tokens=80,
             )
         ]
         result = append_turns(existing, new)
@@ -129,12 +145,14 @@ class TestReducers:
 
     def test_append_defenses(self):
         existing: list[DefenseAction] = []
-        new = [DefenseAction(
-            defense_type="rule_based",
-            defense_config={},
-            triggered_by_turn=1,
-            rationale="test",
-        )]
+        new = [
+            DefenseAction(
+                defense_type="rule_based",
+                defense_config={},
+                triggered_by_turn=1,
+                rationale="test",
+            )
+        ]
         result = append_defenses(existing, new)
         assert len(result) == 1
 

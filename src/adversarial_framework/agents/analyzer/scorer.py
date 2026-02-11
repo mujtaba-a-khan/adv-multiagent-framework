@@ -6,8 +6,9 @@ Only invoked when the Judge verdict is `jailbreak` or `borderline`.
 from __future__ import annotations
 
 import json
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 

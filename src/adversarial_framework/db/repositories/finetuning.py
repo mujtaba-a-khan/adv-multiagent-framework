@@ -43,9 +43,7 @@ class FineTuningJobRepository:
 
         if status is not None:
             stmt = stmt.where(FineTuningJob.status == status)
-            count_stmt = count_stmt.where(
-                FineTuningJob.status == status
-            )
+            count_stmt = count_stmt.where(FineTuningJob.status == status)
 
         result = await self.db.execute(stmt)
         jobs = result.scalars().all()
@@ -74,9 +72,7 @@ class FineTuningJobRepository:
             values["error_message"] = error_message
 
         await self.db.execute(
-            update(FineTuningJob)
-            .where(FineTuningJob.id == job_id)
-            .values(**values)
+            update(FineTuningJob).where(FineTuningJob.id == job_id).values(**values)
         )
         self.db.expire_all()
 
@@ -99,22 +95,16 @@ class FineTuningJobRepository:
             values["total_duration_seconds"] = total_duration_seconds
 
         await self.db.execute(
-            update(FineTuningJob)
-            .where(FineTuningJob.id == job_id)
-            .values(**values)
+            update(FineTuningJob).where(FineTuningJob.id == job_id).values(**values)
         )
 
-    async def append_log(
-        self, job_id: uuid.UUID, entry: dict
-    ) -> None:
+    async def append_log(self, job_id: uuid.UUID, entry: dict) -> None:
         job = await self.get(job_id)
         if job is not None:
             logs = list(job.logs) if job.logs else []
             logs.append(entry)
             await self.db.execute(
-                update(FineTuningJob)
-                .where(FineTuningJob.id == job_id)
-                .values(logs=logs)
+                update(FineTuningJob).where(FineTuningJob.id == job_id).values(logs=logs)
             )
 
     async def delete(self, job_id: uuid.UUID) -> bool:

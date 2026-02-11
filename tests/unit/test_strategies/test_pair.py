@@ -112,12 +112,8 @@ class TestPAIRSingleCallMode:
         assert len(provider.calls) == 1
 
     @pytest.mark.asyncio
-    async def test_single_call_strips_think_tags(
-        self, mock_provider_factory
-    ):
-        provider = mock_provider_factory(
-            ["<think>reasoning</think>Clean prompt"]
-        )
+    async def test_single_call_strips_think_tags(self, mock_provider_factory):
+        provider = mock_provider_factory(["<think>reasoning</think>Clean prompt"])
         strategy = PAIRStrategy(provider=provider)
         result = await strategy.generate(
             objective="Test",

@@ -6,8 +6,9 @@ block rate and assess potential false-positive impact.
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.defenses.base import BaseDefense
 

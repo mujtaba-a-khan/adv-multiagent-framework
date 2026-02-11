@@ -19,7 +19,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 # ── Escalation Templates ──────────────────────────────────────────────────────
 # Each level moves the conversation closer to the true objective.
 # Level 0 = completely innocent; Level 4 = explicit request.
@@ -160,10 +159,7 @@ class CrescendoStrategy(BaseAttackStrategy):
 
         # If the target engaged positively, weave in continuity
         if target_response and "sorry" not in target_response.lower():
-            prompt = (
-                f"Thank you for that explanation. Building on what you shared — "
-                f"{prompt}"
-            )
+            prompt = f"Thank you for that explanation. Building on what you shared — {prompt}"
 
         return AttackResult(
             prompt=prompt,

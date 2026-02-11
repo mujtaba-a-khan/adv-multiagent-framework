@@ -11,15 +11,16 @@ to the TargetInterface's active defense pipeline.
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
 
+import structlog
+
 from adversarial_framework.agents.base import BaseAgent
+from adversarial_framework.agents.defender.guardrail_gen import generate_guardrail
+from adversarial_framework.agents.defender.patch_gen import generate_prompt_patch
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.constants import DefenseType
 from adversarial_framework.core.state import AdversarialState, DefenseAction, TokenBudget
-from adversarial_framework.agents.defender.guardrail_gen import generate_guardrail
-from adversarial_framework.agents.defender.patch_gen import generate_prompt_patch
 
 logger = structlog.get_logger(__name__)
 
@@ -66,12 +67,14 @@ class DefenderAgent(BaseAgent):
             )
             total_tokens += rule_result.get("token_usage", 0)
 
-            defense_actions.append(DefenseAction(
-                defense_type=DefenseType.RULE_BASED.value,
-                defense_config=rule_result.get("guardrail_config", {}),
-                triggered_by_turn=turn_number,
-                rationale=rule_result.get("rationale", "Auto-generated rule-based defense"),
-            ))
+            defense_actions.append(
+                DefenseAction(
+                    defense_type=DefenseType.RULE_BASED.value,
+                    defense_config=rule_result.get("guardrail_config", {}),
+                    triggered_by_turn=turn_number,
+                    rationale=rule_result.get("rationale", "Auto-generated rule-based defense"),
+                )
+            )
 
             logger.info("defender_guardrail_generated", turn=turn_number)
 
@@ -90,12 +93,14 @@ class DefenderAgent(BaseAgent):
             )
             total_tokens += patch_result.get("token_usage", 0)
 
-            defense_actions.append(DefenseAction(
-                defense_type=DefenseType.PROMPT_PATCH.value,
-                defense_config=patch_result.get("patch_config", {}),
-                triggered_by_turn=turn_number,
-                rationale=patch_result.get("rationale", "Auto-generated prompt patch"),
-            ))
+            defense_actions.append(
+                DefenseAction(
+                    defense_type=DefenseType.PROMPT_PATCH.value,
+                    defense_config=patch_result.get("patch_config", {}),
+                    triggered_by_turn=turn_number,
+                    rationale=patch_result.get("rationale", "Auto-generated prompt patch"),
+                )
+            )
 
             logger.info("defender_patch_generated", turn=turn_number)
 

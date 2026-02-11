@@ -10,14 +10,16 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load .env from project root
-_project_root = Path(__file__).resolve().parents[4]  # env.py -> migrations/ -> db/ -> adversarial_framework/ -> src/ -> project
+_project_root = (
+    Path(__file__).resolve().parents[4]
+)  # env.py -> migrations/ -> db/ -> adversarial_framework/ -> src/ -> project
 load_dotenv(_project_root / ".env")
 
-from alembic import context
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from alembic import context  # noqa: E402
+from sqlalchemy import pool  # noqa: E402
+from sqlalchemy.ext.asyncio import async_engine_from_config  # noqa: E402
 
-from adversarial_framework.db.models import Base
+from adversarial_framework.db.models import Base  # noqa: E402
 
 # Alembic Config object
 config = context.config

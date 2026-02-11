@@ -26,13 +26,14 @@ async def run_pull(
     """
     await on_progress(0.0, f"Pulling {source_tag}")
 
-    async with httpx.AsyncClient(
-        base_url=ollama_base_url, timeout=1800.0
-    ) as client, client.stream(
-        "POST",
-        "/api/pull",
-        json={"name": source_tag, "stream": True},
-    ) as resp:
+    async with (
+        httpx.AsyncClient(base_url=ollama_base_url, timeout=1800.0) as client,
+        client.stream(
+            "POST",
+            "/api/pull",
+            json={"name": source_tag, "stream": True},
+        ) as resp,
+    ):
         resp.raise_for_status()
         async for line in resp.aiter_lines():
             if not line.strip():
@@ -47,9 +48,7 @@ async def run_pull(
             total = data.get("total", 0)
 
             if total > 0:
-                pct = min(
-                    (completed / total) * 85.0, 85.0
-                )
+                pct = min((completed / total) * 85.0, 85.0)
                 await on_progress(pct, status)
             else:
                 await on_progress(0.0, status)
@@ -62,9 +61,7 @@ async def run_pull(
             rename_ollama_model,
         )
 
-        await rename_ollama_model(
-            source_tag, output_name, ollama_base_url, on_progress
-        )
+        await rename_ollama_model(source_tag, output_name, ollama_base_url, on_progress)
     else:
         await on_progress(100.0, "Model ready")
 

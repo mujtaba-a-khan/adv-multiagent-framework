@@ -6,8 +6,9 @@ Uses a HarmBench-compatible prompt template for standardised evaluation.
 from __future__ import annotations
 
 import json
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.constants import JudgeVerdict
@@ -156,4 +157,5 @@ def _parse_judge_response(
 
 def _analyzer_budget(tokens: int) -> Any:
     from adversarial_framework.core.state import TokenBudget
+
     return TokenBudget(total_analyzer_tokens=tokens)

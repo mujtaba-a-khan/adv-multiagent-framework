@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import Any
-from dataclasses import dataclass
 
 import pytest
 
@@ -32,12 +31,14 @@ class MockProvider(BaseProvider):
         max_tokens: int = 2048,
         **kwargs: Any,
     ) -> LLMResponse:
-        self.calls.append({
-            "messages": messages,
-            "model": model,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        })
+        self.calls.append(
+            {
+                "messages": messages,
+                "model": model,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+        )
 
         content = self._responses[self._call_index % len(self._responses)]
         self._call_index += 1
@@ -64,6 +65,8 @@ def mock_provider() -> MockProvider:
 @pytest.fixture
 def mock_provider_factory():
     """Factory fixture for creating mock providers with custom responses."""
+
     def _create(responses: list[str]) -> MockProvider:
         return MockProvider(responses=responses)
+
     return _create

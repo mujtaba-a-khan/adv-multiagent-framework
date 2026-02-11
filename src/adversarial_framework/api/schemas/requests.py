@@ -76,13 +76,9 @@ class CreateFineTuningJobRequest(BaseModel):
     """Request body for creating a fine-tuning or abliteration job."""
 
     name: str = Field(..., min_length=1, max_length=255)
-    job_type: str = Field(
-        ..., pattern=r"^(pull_abliterated|abliterate|sft)$"
-    )
+    job_type: str = Field(..., pattern=r"^(pull_abliterated|abliterate|sft)$")
     source_model: str = Field(..., min_length=1, max_length=255)
-    output_model_name: str = Field(
-        ..., min_length=1, max_length=255
-    )
+    output_model_name: str = Field(..., min_length=1, max_length=255)
     config: dict = Field(default_factory=dict)
 
 
@@ -93,12 +89,8 @@ class CreateAbliterationPromptRequest(BaseModel):
     """Request body for adding a prompt to the abliteration dataset."""
 
     text: str = Field(..., min_length=1)
-    category: str = Field(
-        ..., pattern=r"^(harmful|harmless)$"
-    )
-    source: str = Field(
-        default="manual", pattern=r"^(manual|upload|session)$"
-    )
+    category: str = Field(..., pattern=r"^(harmful|harmless)$")
+    source: str = Field(default="manual", pattern=r"^(manual|upload|session)$")
     experiment_id: str | None = None
     session_id: str | None = None
     auto_generate_counterpart: bool = False
@@ -108,9 +100,7 @@ class UpdateAbliterationPromptRequest(BaseModel):
     """Request body for updating an abliteration prompt."""
 
     text: str | None = Field(default=None, min_length=1)
-    category: str | None = Field(
-        default=None, pattern=r"^(harmful|harmless)$"
-    )
+    category: str | None = Field(default=None, pattern=r"^(harmful|harmless)$")
 
 
 class GenerateHarmlessRequest(BaseModel):
@@ -138,18 +128,14 @@ class CreatePlaygroundConversationRequest(BaseModel):
     target_model: str = Field(..., min_length=1, max_length=128)
     target_provider: str = Field(default="ollama", max_length=64)
     system_prompt: str | None = None
-    analyzer_model: str = Field(
-        default="phi4-reasoning:14b", max_length=128
-    )
+    analyzer_model: str = Field(default="phi4-reasoning:14b", max_length=128)
     active_defenses: list[DefenseSelectionItem] | None = None
 
 
 class UpdatePlaygroundConversationRequest(BaseModel):
     """Request body for updating a playground conversation."""
 
-    title: str | None = Field(
-        default=None, min_length=1, max_length=255
-    )
+    title: str | None = Field(default=None, min_length=1, max_length=255)
     system_prompt: str | None = None
     active_defenses: list[DefenseSelectionItem] | None = None
 

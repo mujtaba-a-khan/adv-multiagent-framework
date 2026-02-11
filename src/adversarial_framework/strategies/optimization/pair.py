@@ -216,10 +216,14 @@ class PAIRStrategy(BaseAttackStrategy):
 
         if separate:
             return await self._generate_two_call(
-                objective, attacker_model, temperature,
+                objective,
+                attacker_model,
+                temperature,
             )
         return await self._generate_single_call(
-            objective, attacker_model, temperature,
+            objective,
+            attacker_model,
+            temperature,
         )
 
     async def refine(
@@ -241,13 +245,21 @@ class PAIRStrategy(BaseAttackStrategy):
 
         if separate:
             return await self._refine_two_call(
-                objective, previous_prompt, target_response,
-                judge_feedback, history_section, attacker_model,
+                objective,
+                previous_prompt,
+                target_response,
+                judge_feedback,
+                history_section,
+                attacker_model,
                 temperature,
             )
         return await self._refine_single_call(
-            objective, previous_prompt, target_response,
-            judge_feedback, history_section, attacker_model,
+            objective,
+            previous_prompt,
+            target_response,
+            judge_feedback,
+            history_section,
+            attacker_model,
             temperature,
         )
 
@@ -256,7 +268,10 @@ class PAIRStrategy(BaseAttackStrategy):
     # ------------------------------------------------------------------
 
     async def _generate_two_call(
-        self, objective: str, model: str, temperature: float,
+        self,
+        objective: str,
+        model: str,
+        temperature: float,
     ) -> AttackResult:
         result = await generate_with_reasoning(
             self.provider,
@@ -321,7 +336,10 @@ class PAIRStrategy(BaseAttackStrategy):
     # ------------------------------------------------------------------
 
     async def _generate_single_call(
-        self, objective: str, model: str, temperature: float,
+        self,
+        objective: str,
+        model: str,
+        temperature: float,
     ) -> AttackResult:
         system = _SINGLE_PAIR_SYSTEM.format(objective=objective)
         user_msg = (

@@ -8,8 +8,9 @@ selects the optimal strategy and parameters for the next attempt.
 from __future__ import annotations
 
 import json
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.state import AdversarialState, AttackTurn
@@ -50,10 +51,12 @@ def _summarize_history(history: list[AttackTurn], max_entries: int = 5) -> str:
     recent = history[-max_entries:]
     lines = []
     for turn in recent:
+        verdict = (
+            turn.judge_verdict.value if hasattr(turn.judge_verdict, "value") else turn.judge_verdict
+        )
         lines.append(
             f"Turn {turn.turn_number}: strategy={turn.strategy_name}, "
-            f"verdict={turn.judge_verdict.value if hasattr(turn.judge_verdict, 'value') else turn.judge_verdict}, "
-            f"blocked={turn.target_blocked}"
+            f"verdict={verdict}, blocked={turn.target_blocked}"
         )
     return "\n".join(lines)
 

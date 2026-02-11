@@ -68,21 +68,14 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 def get_ollama_provider(settings: SettingsDep) -> OllamaProvider:
     return OllamaProvider(base_url=settings.ollama_base_url)
 
+
 # Annotated DI aliases for endpoint signatures
-ExperimentRepoDep = Annotated[
-    ExperimentRepository, Depends(get_experiment_repo)
-]
+ExperimentRepoDep = Annotated[ExperimentRepository, Depends(get_experiment_repo)]
 SessionRepoDep = Annotated[SessionRepository, Depends(get_session_repo)]
 TurnRepoDep = Annotated[TurnRepository, Depends(get_turn_repo)]
-FineTuningRepoDep = Annotated[
-    FineTuningJobRepository, Depends(get_finetuning_repo)
-]
+FineTuningRepoDep = Annotated[FineTuningJobRepository, Depends(get_finetuning_repo)]
 AbliterationPromptRepoDep = Annotated[
     AbliterationPromptRepository, Depends(get_abliteration_prompt_repo)
 ]
-PlaygroundRepoDep = Annotated[
-    PlaygroundRepository, Depends(get_playground_repo)
-]
-OllamaProviderDep = Annotated[
-    OllamaProvider, Depends(get_ollama_provider)
-]
+PlaygroundRepoDep = Annotated[PlaygroundRepository, Depends(get_playground_repo)]
+OllamaProviderDep = Annotated[OllamaProvider, Depends(get_ollama_provider)]

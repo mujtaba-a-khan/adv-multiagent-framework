@@ -72,7 +72,13 @@ export default function PlaygroundChatPage() {
   } = usePGWSStore();
 
   const [prompt, setPrompt] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState<string | null>(null);
+  // User override for system prompt — null means "use conversation default"
+  const [systemPromptOverride, setSystemPromptOverride] = useState<
+    string | null
+  >(null);
+  const systemPrompt =
+    systemPromptOverride ?? conversation?.system_prompt ?? "";
+  const setSystemPrompt = setSystemPromptOverride;
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const chatRef = useRef<HTMLDivElement>(null);
@@ -86,13 +92,6 @@ export default function PlaygroundChatPage() {
       return () => wsDisconnect();
     }
   }, [conversationId, wsConnect, wsDisconnect]);
-
-  // Sync system prompt from conversation on load
-  useEffect(() => {
-    if (conversation && systemPrompt === null) {
-      setSystemPrompt(conversation.system_prompt ?? "");
-    }
-  }, [conversation, systemPrompt]);
 
   const messages = messagesData?.messages ?? [];
 

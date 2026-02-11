@@ -7,6 +7,7 @@ strategy sub-packages and imports them, triggering registration.
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 import pkgutil
 from typing import TYPE_CHECKING
@@ -52,9 +53,7 @@ class StrategyRegistry:
     @classmethod
     def list_by_category(cls, category: str) -> list[StrategyMetadata]:
         """Return metadata filtered by ``AttackCategory``."""
-        return [
-            s.metadata for s in cls._strategies.values() if s.metadata.category == category
-        ]
+        return [s.metadata for s in cls._strategies.values() if s.metadata.category == category]
 
     @classmethod
     def list_names(cls) -> list[str]:
@@ -69,7 +68,5 @@ class StrategyRegistry:
         for _importer, module_name, _is_pkg in pkgutil.walk_packages(
             pkg.__path__, prefix=f"{pkg.__name__}."
         ):
-            try:
+            with contextlib.suppress(ImportError):
                 importlib.import_module(module_name)
-            except ImportError:
-                pass  # Skip optional heavy deps (e.g. torch for GCG)

@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager as AsyncContextManager
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import structlog
 
@@ -70,9 +71,7 @@ async def run_job(
                     total_duration_seconds=elapsed,
                 )
         except Exception:
-            logger.warning(
-                "progress_persist_failed", job_id=jid
-            )
+            logger.warning("progress_persist_failed", job_id=jid)
 
         await broadcast_finetuning(
             jid,
@@ -104,9 +103,7 @@ async def run_job(
                 run_pull,
             )
 
-            source_tag = snapshot.config.get(
-                "ollama_tag", snapshot.source_model
-            )
+            source_tag = snapshot.config.get("ollama_tag", snapshot.source_model)
             await run_pull(
                 source_tag,
                 snapshot.output_model_name,
@@ -118,9 +115,7 @@ async def run_job(
                 run_abliterate,
             )
 
-            harmful, harmless = await _fetch_dataset_prompts(
-                get_db_session
-            )
+            harmful, harmless = await _fetch_dataset_prompts(get_db_session)
             await run_abliterate(
                 snapshot.source_model,
                 snapshot.output_model_name,
@@ -143,9 +138,7 @@ async def run_job(
                 on_progress,
             )
         else:
-            raise ValueError(
-                f"Unknown job type: {snapshot.job_type}"
-            )
+            raise ValueError(f"Unknown job type: {snapshot.job_type}")
 
         # Mark completed
         elapsed = time.monotonic() - start_time

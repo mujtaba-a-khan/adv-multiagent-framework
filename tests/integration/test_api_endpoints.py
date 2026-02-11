@@ -7,7 +7,7 @@ they can run without a real PostgreSQL / Neon connection.
 from __future__ import annotations
 
 import uuid
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -26,9 +26,7 @@ from adversarial_framework.db.models import Base
 TEST_DB_URL = "sqlite+aiosqlite:///file::memory:?cache=shared&uri=true"
 
 engine = create_async_engine(TEST_DB_URL, echo=False)
-TestSessionFactory = async_sessionmaker(
-    bind=engine, class_=AsyncSession, expire_on_commit=False
-)
+TestSessionFactory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -63,9 +61,7 @@ async def setup_database():
 async def client() -> AsyncGenerator[AsyncClient, None]:
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
 
@@ -104,15 +100,18 @@ class TestExperimentEndpoints:
     async def test_list_experiments(self, client: AsyncClient):
         # Create two experiments
         for i in range(2):
-            await client.post("/api/v1/experiments", json={
-                "name": f"Exp {i}",
-                "target_model": "llama3:8b",
-                "attacker_model": "phi4-reasoning:14b",
-                "analyzer_model": "phi4-reasoning:14b",
-                "defender_model": "qwen3:8b",
-                "attack_objective": "Test",
-                "strategy_name": "pair",
-            })
+            await client.post(
+                "/api/v1/experiments",
+                json={
+                    "name": f"Exp {i}",
+                    "target_model": "llama3:8b",
+                    "attacker_model": "phi4-reasoning:14b",
+                    "analyzer_model": "phi4-reasoning:14b",
+                    "defender_model": "qwen3:8b",
+                    "attack_objective": "Test",
+                    "strategy_name": "pair",
+                },
+            )
         resp = await client.get("/api/v1/experiments")
         assert resp.status_code == 200
         data = resp.json()
@@ -120,15 +119,18 @@ class TestExperimentEndpoints:
 
     @pytest.mark.asyncio
     async def test_get_experiment(self, client: AsyncClient):
-        create_resp = await client.post("/api/v1/experiments", json={
-            "name": "Get Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        create_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Get Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = create_resp.json()["id"]
         resp = await client.get(f"/api/v1/experiments/{exp_id}")
         assert resp.status_code == 200
@@ -142,15 +144,18 @@ class TestExperimentEndpoints:
 
     @pytest.mark.asyncio
     async def test_update_experiment(self, client: AsyncClient):
-        create_resp = await client.post("/api/v1/experiments", json={
-            "name": "Update Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        create_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Update Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = create_resp.json()["id"]
         resp = await client.patch(
             f"/api/v1/experiments/{exp_id}",
@@ -161,15 +166,18 @@ class TestExperimentEndpoints:
 
     @pytest.mark.asyncio
     async def test_delete_experiment(self, client: AsyncClient):
-        create_resp = await client.post("/api/v1/experiments", json={
-            "name": "Delete Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        create_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Delete Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = create_resp.json()["id"]
         resp = await client.delete(f"/api/v1/experiments/{exp_id}")
         assert resp.status_code == 204
@@ -189,15 +197,18 @@ class TestSessionEndpoints:
     @pytest.mark.asyncio
     async def test_create_session(self, client: AsyncClient):
         # Create experiment first
-        exp_resp = await client.post("/api/v1/experiments", json={
-            "name": "Session Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        exp_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Session Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = exp_resp.json()["id"]
 
         resp = await client.post(
@@ -215,15 +226,18 @@ class TestSessionEndpoints:
     @pytest.mark.asyncio
     async def test_create_session_requires_strategy(self, client: AsyncClient):
         """Creating a session without strategy/budget should fail validation."""
-        exp_resp = await client.post("/api/v1/experiments", json={
-            "name": "Session Validation Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        exp_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Session Validation Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = exp_resp.json()["id"]
 
         resp = await client.post(
@@ -235,15 +249,18 @@ class TestSessionEndpoints:
     @pytest.mark.asyncio
     async def test_create_session_with_different_strategy(self, client: AsyncClient):
         """Sessions can use different strategies than the experiment default."""
-        exp_resp = await client.post("/api/v1/experiments", json={
-            "name": "Multi-Strategy Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        exp_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "Multi-Strategy Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = exp_resp.json()["id"]
 
         resp = await client.post(
@@ -262,15 +279,18 @@ class TestSessionEndpoints:
 
     @pytest.mark.asyncio
     async def test_list_sessions(self, client: AsyncClient):
-        exp_resp = await client.post("/api/v1/experiments", json={
-            "name": "List Sessions Test",
-            "target_model": "llama3:8b",
-            "attacker_model": "phi4-reasoning:14b",
-            "analyzer_model": "phi4-reasoning:14b",
-            "defender_model": "qwen3:8b",
-            "attack_objective": "Test",
-            "strategy_name": "pair",
-        })
+        exp_resp = await client.post(
+            "/api/v1/experiments",
+            json={
+                "name": "List Sessions Test",
+                "target_model": "llama3:8b",
+                "attacker_model": "phi4-reasoning:14b",
+                "analyzer_model": "phi4-reasoning:14b",
+                "defender_model": "qwen3:8b",
+                "attack_objective": "Test",
+                "strategy_name": "pair",
+            },
+        )
         exp_id = exp_resp.json()["id"]
 
         # Create two sessions with different strategies

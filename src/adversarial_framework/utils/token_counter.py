@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import tiktoken
 
-
 # Approximate per-token costs (USD) for various providers.
 # Local Ollama models are effectively free; these rates are for
 # optional commercial providers and cost estimation.
@@ -43,9 +42,7 @@ def estimate_cost(
     return (prompt_tokens * rates["input"]) + (completion_tokens * rates["output"])
 
 
-def count_messages_tokens(
-    messages: list[dict[str, str]], model: str = "gpt-4o"
-) -> int:
+def count_messages_tokens(messages: list[dict[str, str]], model: str = "gpt-4o") -> int:
     """Count total tokens across a list of chat messages."""
     total = 0
     for msg in messages:

@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import operator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any, TypedDict
 
 from adversarial_framework.core.constants import JudgeVerdict, SessionStatus
 
 # Nested Data Structures
+
 
 @dataclass(frozen=True)
 class AttackTurn:
@@ -38,7 +39,8 @@ class AttackTurn:
     analyzer_tokens: int
     raw_target_response: str | None = None
     attacker_reasoning: str | None = None
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+
 
 @dataclass(frozen=True)
 class DefenseAction:
@@ -51,6 +53,7 @@ class DefenseAction:
     block_rate: float | None = None
     false_positive_rate: float | None = None
 
+
 @dataclass
 class TokenBudget:
     """Accumulated token usage across all agents."""
@@ -61,17 +64,19 @@ class TokenBudget:
     total_defender_tokens: int = 0
     estimated_cost_usd: float = 0.0
 
+
 # Custom Reducers
+
 
 def append_turns(existing: list[AttackTurn], new: list[AttackTurn]) -> list[AttackTurn]:
     """Append-only reducer: new turns are appended to history."""
     return existing + new
 
-def append_defenses(
-    existing: list[DefenseAction], new: list[DefenseAction]
-) -> list[DefenseAction]:
+
+def append_defenses(existing: list[DefenseAction], new: list[DefenseAction]) -> list[DefenseAction]:
     """Append-only reducer: new defenses are appended."""
     return existing + new
+
 
 def merge_budget(existing: TokenBudget, new: TokenBudget) -> TokenBudget:
     """Accumulate token usage across agents."""
@@ -83,12 +88,14 @@ def merge_budget(existing: TokenBudget, new: TokenBudget) -> TokenBudget:
         estimated_cost_usd=existing.estimated_cost_usd + new.estimated_cost_usd,
     )
 
+
 def latest(existing: Any, new: Any) -> Any:  # noqa: ANN401
     """Last-write-wins reducer for scalar fields."""
     return new if new is not None else existing
 
 
 # Main State TypedDict
+
 
 class AdversarialState(TypedDict):
     """Central LangGraph state for the adversarial attack cycle.

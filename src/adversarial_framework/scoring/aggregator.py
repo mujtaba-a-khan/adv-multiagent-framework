@@ -25,6 +25,7 @@ class StrategyEffectiveness:
     avg_turns_to_jailbreak: float
     cost_per_jailbreak: float
 
+
 @dataclass(frozen=True)
 class ExperimentSummary:
     """Aggregate summary across all sessions in an experiment."""
@@ -49,6 +50,7 @@ class ExperimentSummary:
     defense_bypass_rate: float  # Fraction of attacks that bypassed active defenses
     top_strategies: list[str]  # Ordered by ASR descending
 
+
 def _merge_category_breakdowns(
     sessions: list[SessionMetrics],
 ) -> dict[str, int]:
@@ -63,10 +65,13 @@ def _merge_category_breakdowns(
 def _new_strategy_stats() -> dict[str, Any]:
     """Return a fresh zero-initialised stats bucket."""
     return {
-        "attempts": 0, "jailbreaks": 0,
-        "severity_sum": 0.0, "severity_count": 0,
+        "attempts": 0,
+        "jailbreaks": 0,
+        "severity_sum": 0.0,
+        "severity_count": 0,
         "cost": 0.0,
-        "turns_to_jb_sum": 0.0, "turns_to_jb_count": 0,
+        "turns_to_jb_sum": 0.0,
+        "turns_to_jb_count": 0,
     }
 
 
@@ -96,7 +101,8 @@ def _safe_ratio(numerator: float, denominator: float) -> float:
 
 
 def _build_effectiveness(
-    name: str, stats: dict[str, Any],
+    name: str,
+    stats: dict[str, Any],
 ) -> StrategyEffectiveness:
     """Convert a raw stats dict into a StrategyEffectiveness record."""
     return StrategyEffectiveness(
@@ -105,13 +111,16 @@ def _build_effectiveness(
         total_jailbreaks=stats["jailbreaks"],
         asr=_safe_ratio(stats["jailbreaks"], stats["attempts"]),
         avg_severity=_safe_ratio(
-            stats["severity_sum"], stats["severity_count"],
+            stats["severity_sum"],
+            stats["severity_count"],
         ),
         avg_turns_to_jailbreak=_safe_ratio(
-            stats["turns_to_jb_sum"], stats["turns_to_jb_count"],
+            stats["turns_to_jb_sum"],
+            stats["turns_to_jb_count"],
         ),
         cost_per_jailbreak=_safe_ratio(
-            stats["cost"], stats["jailbreaks"],
+            stats["cost"],
+            stats["jailbreaks"],
         ),
     )
 
@@ -123,17 +132,10 @@ def _compute_strategy_effectiveness(
     """Compute per-strategy effectiveness, sorted by ASR descending."""
     strategy_stats: dict[str, dict[str, Any]] = {}
     for idx, s in enumerate(sessions):
-        details = (
-            session_details[idx]
-            if session_details and idx < len(session_details)
-            else {}
-        )
+        details = session_details[idx] if session_details and idx < len(session_details) else {}
         _accumulate_session(strategy_stats, s, details)
 
-    result = [
-        _build_effectiveness(name, stats)
-        for name, stats in strategy_stats.items()
-    ]
+    result = [_build_effectiveness(name, stats) for name, stats in strategy_stats.items()]
     result.sort(key=lambda e: e.asr, reverse=True)
     return result
 
@@ -192,7 +194,8 @@ def aggregate_sessions(
 
     merged_categories = _merge_category_breakdowns(sessions)
     effectiveness = _compute_strategy_effectiveness(
-        sessions, session_details,
+        sessions,
+        session_details,
     )
     top_strategies = [e.strategy_name for e in effectiveness[:5]]
 

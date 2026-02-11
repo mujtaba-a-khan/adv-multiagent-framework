@@ -7,8 +7,9 @@ It instantiates the strategy selected by the Planner and calls its
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.constants import JudgeVerdict
@@ -70,9 +71,7 @@ async def run_executor(
             judge_feedback = ", ".join(fb_parts)
 
             strategy_params["_previous_verdict"] = (
-                verdict.value
-                if isinstance(verdict, JudgeVerdict)
-                else str(verdict)
+                verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
             )
             result = await strategy.refine(
                 objective=objective,

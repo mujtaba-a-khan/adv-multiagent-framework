@@ -31,7 +31,5 @@ v1_router.include_router(finetuning_router, prefix="/finetuning", tags=["Fine-Tu
 v1_router.include_router(
     dataset_router, prefix="/finetuning/dataset", tags=["Abliteration Dataset"]
 )
-v1_router.include_router(
-    playground_router, prefix="/playground", tags=["Playground"]
-)
+v1_router.include_router(playground_router, prefix="/playground", tags=["Playground"])
 v1_router.include_router(ws_router, tags=["WebSocket"])

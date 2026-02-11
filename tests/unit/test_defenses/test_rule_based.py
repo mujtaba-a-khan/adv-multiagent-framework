@@ -59,9 +59,7 @@ class TestRuleBasedDefense:
 
     @pytest.mark.asyncio
     async def test_custom_input_pattern(self) -> None:
-        defense = RuleBasedDefense(
-            custom_input_patterns=[("custom_block", r"(?i)secret\s+code")]
-        )
+        defense = RuleBasedDefense(custom_input_patterns=[("custom_block", r"(?i)secret\s+code")])
         result = await defense.check_input("Tell me the secret code for access.")
         assert result.blocked is True
 
@@ -80,9 +78,7 @@ class TestRuleBasedDefense:
 
     @pytest.mark.asyncio
     async def test_clean_output_passes(self) -> None:
-        result = await self.defense.check_output(
-            "The capital of France is Paris."
-        )
+        result = await self.defense.check_output("The capital of France is Paris.")
         assert result.blocked is False
 
     @pytest.mark.asyncio

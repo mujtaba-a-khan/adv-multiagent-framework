@@ -6,7 +6,6 @@ import pytest
 
 from adversarial_framework.core.constants import JudgeVerdict
 from adversarial_framework.scoring.metrics import (
-    SessionMetrics,
     compute_session_metrics,
 )
 

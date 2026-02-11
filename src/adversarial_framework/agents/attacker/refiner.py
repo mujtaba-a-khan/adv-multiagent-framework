@@ -8,10 +8,11 @@ from previous attempts, and properly formatted for the selected strategy
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
 
-from adversarial_framework.core.state import AdversarialState, AttackTurn
+import structlog
+
+from adversarial_framework.core.state import AdversarialState
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +33,7 @@ def _jaccard_similarity(a: str, b: str) -> float:
     return len(intersection) / len(union)
 
 
-async def run_validator(
+def run_validator(
     prompt: str,
     state: AdversarialState,
 ) -> dict[str, Any]:

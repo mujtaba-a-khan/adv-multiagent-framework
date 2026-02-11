@@ -34,7 +34,7 @@ async def get_postgres_checkpointer(
 
     """LangGraph's Postgres saver expects a psycopg connection string
     (not asyncpg), so convert if needed."""
-    
+
     conn_str = connection_string
     if "+asyncpg" in conn_str:
         conn_str = conn_str.replace("+asyncpg", "")

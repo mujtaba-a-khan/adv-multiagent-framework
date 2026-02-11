@@ -137,19 +137,13 @@ class PromptHijackingStrategy(BaseAttackStrategy):
 
         prev_verdict = params.get("_previous_verdict", "refused")
         if prev_verdict == "jailbreak":
-            reason_suffix = (
-                f"'{current_vector}' succeeded — trying"
-                " alternative injection vector"
-            )
+            reason_suffix = f"'{current_vector}' succeeded — trying alternative injection vector"
         else:
             reason_suffix = f"'{current_vector}' was detected"
 
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"vector": name},
-            reasoning=(
-                f"Cycling to '{name}' injection vector:"
-                f" {reason_suffix}"
-            ),
+            reasoning=(f"Cycling to '{name}' injection vector: {reason_suffix}"),
             token_usage=0,
         )

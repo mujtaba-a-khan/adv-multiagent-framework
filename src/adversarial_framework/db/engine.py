@@ -10,8 +10,8 @@ Usage::
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -33,8 +33,7 @@ def get_engine() -> AsyncEngine:
         settings = get_settings()
         if not settings.database_url:
             raise RuntimeError(
-                "ADV_DATABASE_URL is not set. "
-                "Set it to your PostgreSQL connection string."
+                "ADV_DATABASE_URL is not set. Set it to your PostgreSQL connection string."
             )
         _engine = create_async_engine(
             settings.database_url,

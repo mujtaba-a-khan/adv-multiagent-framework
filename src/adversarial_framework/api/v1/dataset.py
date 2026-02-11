@@ -33,9 +33,7 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _PROMPT_NOT_FOUND = "Prompt not found"
-_MODEL_NOT_SELECTED = (
-    "Please select and initialize a generation model first"
-)
+_MODEL_NOT_SELECTED = "Please select and initialize a generation model first"
 
 _HARMLESS_SYSTEM_PROMPT = (
     "Rewrite the following prompt as a harmless, educational request "
@@ -96,10 +94,7 @@ async def add_prompt(
 
     prompt = await repo.create(**kwargs)
 
-    if (
-        body.auto_generate_counterpart
-        and body.category == "harmful"
-    ):
+    if body.auto_generate_counterpart and body.category == "harmful":
         if not generation_model:
             raise HTTPException(
                 status_code=400,
@@ -141,10 +136,7 @@ async def list_prompts(
         source=source,
     )
     return AbliterationPromptListResponse(
-        prompts=[
-            AbliterationPromptResponse.model_validate(p)
-            for p in prompts
-        ],
+        prompts=[AbliterationPromptResponse.model_validate(p) for p in prompts],
         total=total,
     )
 
@@ -161,10 +153,7 @@ async def get_stats(
 
     warning = None
     if pair_count < 16 and total > 0:
-        warning = (
-            f"Only {pair_count} pairs. "
-            "Recommended minimum is 16 for reliable abliteration."
-        )
+        warning = f"Only {pair_count} pairs. Recommended minimum is 16 for reliable abliteration."
 
     return AbliterationDatasetStatsResponse(
         harmful_count=harmful,
@@ -180,13 +169,9 @@ async def update_prompt(
     body: UpdateAbliterationPromptRequest,
     repo: AbliterationPromptRepoDep,
 ) -> AbliterationPromptResponse:
-    prompt = await repo.update(
-        prompt_id, text=body.text, category=body.category
-    )
+    prompt = await repo.update(prompt_id, text=body.text, category=body.category)
     if prompt is None:
-        raise HTTPException(
-            status_code=404, detail=_PROMPT_NOT_FOUND
-        )
+        raise HTTPException(status_code=404, detail=_PROMPT_NOT_FOUND)
     return AbliterationPromptResponse.model_validate(prompt)
 
 
@@ -197,9 +182,7 @@ async def delete_prompt(
 ) -> None:
     deleted = await repo.delete(prompt_id)
     if not deleted:
-        raise HTTPException(
-            status_code=404, detail=_PROMPT_NOT_FOUND
-        )
+        raise HTTPException(status_code=404, detail=_PROMPT_NOT_FOUND)
 
 
 # Upload
@@ -217,9 +200,7 @@ async def upload_prompts(
 
     Each line: {"harmful": "...", "harmless": "..."}
     """
-    if not file.filename or not file.filename.endswith(
-        (".jsonl", ".json")
-    ):
+    if not file.filename or not file.filename.endswith((".jsonl", ".json")):
         raise HTTPException(
             status_code=400,
             detail="File must be .jsonl or .json",
@@ -244,10 +225,7 @@ async def upload_prompts(
         if "harmful" not in pair or "harmless" not in pair:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    f"Line {i + 1}: each line must have "
-                    "'harmful' and 'harmless' keys"
-                ),
+                detail=(f"Line {i + 1}: each line must have 'harmful' and 'harmless' keys"),
             )
 
         to_create.append(
@@ -266,9 +244,7 @@ async def upload_prompts(
         )
 
     if not to_create:
-        raise HTTPException(
-            status_code=400, detail="No valid prompt pairs found"
-        )
+        raise HTTPException(status_code=400, detail="No valid prompt pairs found")
 
     created = await repo.create_many(to_create)
     # Link harmless→harmful pairs by position (persist to DB)
@@ -280,10 +256,7 @@ async def upload_prompts(
             )
 
     return AbliterationPromptListResponse(
-        prompts=[
-            AbliterationPromptResponse.model_validate(p)
-            for p in created
-        ],
+        prompts=[AbliterationPromptResponse.model_validate(p) for p in created],
         total=len(created),
     )
 
@@ -307,9 +280,7 @@ async def generate_harmless(
             status_code=400,
             detail=_MODEL_NOT_SELECTED,
         )
-    harmless_text = await _generate_harmless_counterpart(
-        body.harmful_prompt, provider, model
-    )
+    harmless_text = await _generate_harmless_counterpart(body.harmful_prompt, provider, model)
 
     kwargs: dict[str, object] = {
         "text": harmless_text,
@@ -337,10 +308,7 @@ async def list_suggestions(
     """List auto-detected suggestions from baseline refusals."""
     suggestions, total = await repo.list_suggestions()
     return DatasetSuggestionResponse(
-        suggestions=[
-            AbliterationPromptResponse.model_validate(s)
-            for s in suggestions
-        ],
+        suggestions=[AbliterationPromptResponse.model_validate(s) for s in suggestions],
         total=total,
     )
 
@@ -356,9 +324,7 @@ async def confirm_suggestion(
     """Confirm a suggestion, moving it from 'suggested' to 'active'."""
     prompt = await repo.confirm(prompt_id)
     if prompt is None:
-        raise HTTPException(
-            status_code=404, detail=_PROMPT_NOT_FOUND
-        )
+        raise HTTPException(status_code=404, detail=_PROMPT_NOT_FOUND)
 
     if auto_generate_counterpart:
         if not model:
@@ -367,9 +333,7 @@ async def confirm_suggestion(
                 detail=_MODEL_NOT_SELECTED,
             )
         try:
-            harmless_text = await _generate_harmless_counterpart(
-                prompt.text, provider, model
-            )
+            harmless_text = await _generate_harmless_counterpart(prompt.text, provider, model)
             await repo.create(
                 text=harmless_text,
                 category="harmless",
@@ -387,9 +351,7 @@ async def confirm_suggestion(
     return AbliterationPromptResponse.model_validate(prompt)
 
 
-@router.post(
-    "/prompts/{prompt_id}/dismiss", status_code=204
-)
+@router.post("/prompts/{prompt_id}/dismiss", status_code=204)
 async def dismiss_suggestion(
     prompt_id: uuid.UUID,
     repo: AbliterationPromptRepoDep,
@@ -397,9 +359,7 @@ async def dismiss_suggestion(
     """Dismiss (delete) a suggestion."""
     deleted = await repo.delete(prompt_id)
     if not deleted:
-        raise HTTPException(
-            status_code=404, detail=_PROMPT_NOT_FOUND
-        )
+        raise HTTPException(status_code=404, detail=_PROMPT_NOT_FOUND)
 
 
 # Model Lifecycle

@@ -66,15 +66,19 @@ class TestDefenseRegistry:
     def test_list_all_sorted(self) -> None:
         class _AlphaDefense(BaseDefense):
             name = "alpha"
+
             async def check_input(self, prompt: str) -> DefenseCheckResult:
                 return DefenseCheckResult(blocked=False)
+
             async def check_output(self, response: str) -> DefenseCheckResult:
                 return DefenseCheckResult(blocked=False)
 
         class _BetaDefense(BaseDefense):
             name = "beta"
+
             async def check_input(self, prompt: str) -> DefenseCheckResult:
                 return DefenseCheckResult(blocked=False)
+
             async def check_output(self, response: str) -> DefenseCheckResult:
                 return DefenseCheckResult(blocked=False)
 

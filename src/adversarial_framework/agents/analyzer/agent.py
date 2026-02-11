@@ -6,17 +6,17 @@ is 'jailbreak' or `borderline`, saving ~66% of LLM calls on refusals.
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
 
+import structlog
+
+from adversarial_framework.agents.analyzer.classifier import run_classifier
+from adversarial_framework.agents.analyzer.judge import run_judge
+from adversarial_framework.agents.analyzer.scorer import run_scorer
 from adversarial_framework.agents.base import BaseAgent
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.constants import JudgeVerdict
 from adversarial_framework.core.state import AdversarialState
-
-from adversarial_framework.agents.analyzer.judge import run_judge
-from adversarial_framework.agents.analyzer.classifier import run_classifier
-from adversarial_framework.agents.analyzer.scorer import run_scorer
 
 logger = structlog.get_logger(__name__)
 
@@ -49,7 +49,7 @@ class AnalyzerAgent(BaseAgent):
                 "judge_confidence": 0.0,
             }
 
-        #Step 1: Judge (always runs)
+        # Step 1: Judge (always runs)
         logger.info("analyzer_judge_start", turn=state.get("current_turn", 0))
         judge_result = await run_judge(
             provider=self.provider,
@@ -121,13 +121,15 @@ class AnalyzerAgent(BaseAgent):
             reducer ignores None (`return new if new is not None else existing`)
             so setting None would preserve stale scores from prior turns.
             """
-            updates.update({
-                "severity_score": 0.0,
-                "specificity_score": 0.0,
-                "coherence_score": 0.0,
-                "vulnerability_category": "",
-                "attack_technique": "",
-            })
+            updates.update(
+                {
+                    "severity_score": 0.0,
+                    "specificity_score": 0.0,
+                    "coherence_score": 0.0,
+                    "vulnerability_category": "",
+                    "attack_technique": "",
+                }
+            )
 
         # Update counters
         if verdict == JudgeVerdict.JAILBREAK:

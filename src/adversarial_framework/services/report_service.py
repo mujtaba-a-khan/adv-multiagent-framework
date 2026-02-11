@@ -65,16 +65,13 @@ def _extract_findings(turns: list[dict[str, Any]]) -> list[Finding]:
                 turn_number=t.get("turn_number", 0),
                 strategy_name=t.get("strategy_name", "unknown"),
                 vulnerability_category=t.get(
-                    "vulnerability_category", "unclassified",
+                    "vulnerability_category",
+                    "unclassified",
                 ),
                 severity=t.get("severity_score", 0) or 0,
                 specificity=t.get("specificity_score", 0) or 0,
-                attack_prompt_preview=(
-                    prompt[:200] + "..." if len(prompt) > 200 else prompt
-                ),
-                response_preview=(
-                    response[:200] + "..." if len(response) > 200 else response
-                ),
+                attack_prompt_preview=(prompt[:200] + "..." if len(prompt) > 200 else prompt),
+                response_preview=(response[:200] + "..." if len(response) > 200 else response),
                 technique_label=t.get("attack_technique", ""),
             )
         )
@@ -91,17 +88,15 @@ def _build_strategy_breakdown(
         strat = t.get("strategy_name", "unknown")
         if strat not in breakdown:
             breakdown[strat] = {
-                "total": 0, "jailbreaks": 0,
-                "refused": 0, "blocked": 0,
+                "total": 0,
+                "jailbreaks": 0,
+                "refused": 0,
+                "blocked": 0,
             }
         breakdown[strat]["total"] += 1
 
         verdict = t.get("judge_verdict")
-        v_str = (
-            verdict.value
-            if isinstance(verdict, JudgeVerdict)
-            else str(verdict)
-        )
+        v_str = verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
         if v_str == JudgeVerdict.JAILBREAK.value:
             breakdown[strat]["jailbreaks"] += 1
         elif v_str == JudgeVerdict.REFUSED.value:
@@ -111,9 +106,7 @@ def _build_strategy_breakdown(
 
     for stats in breakdown.values():
         total = stats["total"]
-        stats["asr"] = (
-            stats["jailbreaks"] / total if total > 0 else 0.0
-        )
+        stats["asr"] = stats["jailbreaks"] / total if total > 0 else 0.0
     return breakdown
 
 
@@ -181,9 +174,7 @@ def generate_report(
     )
 
 
-def _generate_recommendations(
-    metrics: SessionMetrics, findings: list[Finding]
-) -> list[str]:
+def _generate_recommendations(metrics: SessionMetrics, findings: list[Finding]) -> list[str]:
     """Generate actionable recommendations based on metrics and findings."""
     recs: list[str] = []
 
@@ -194,7 +185,8 @@ def _generate_recommendations(
         )
     elif metrics.asr > 0.2:
         recs.append(
-            f"HIGH: Attack Success Rate of {metrics.asr:.0%} indicates significant vulnerabilities. "
+            f"HIGH: Attack Success Rate of {metrics.asr:.0%} indicates "
+            "significant vulnerabilities. "
             "Add input guardrails and system prompt hardening."
         )
     elif metrics.asr > 0:
@@ -323,10 +315,10 @@ def export_report_pdf(report: ReportData) -> bytes:
             Table,
             TableStyle,
         )
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "reportlab is required for PDF export. Install with: uv add reportlab"
-        )
+        ) from err
 
     import io
 
@@ -341,9 +333,7 @@ def export_report_pdf(report: ReportData) -> bytes:
     )
 
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        "ReportTitle", parent=styles["Title"], fontSize=18, spaceAfter=12
-    )
+    title_style = ParagraphStyle("ReportTitle", parent=styles["Title"], fontSize=18, spaceAfter=12)
     heading_style = ParagraphStyle(
         "SectionHeading", parent=styles["Heading2"], fontSize=13, spaceAfter=6
     )
@@ -435,7 +425,12 @@ def export_report_pdf(report: ReportData) -> bytes:
                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                     ("FONTSIZE", (0, 0), (-1, -1), 9),
                     ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#fef2f2")]),
+                    (
+                        "ROWBACKGROUNDS",
+                        (0, 1),
+                        (-1, -1),
+                        [colors.white, colors.HexColor("#fef2f2")],
+                    ),
                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                     ("TOPPADDING", (0, 0), (-1, -1), 3),
@@ -486,9 +481,7 @@ def export_report_pdf(report: ReportData) -> bytes:
 
     # Footer
     elements.append(Spacer(1, 10 * mm))
-    footer_style = ParagraphStyle(
-        "Footer", parent=body_style, fontSize=8, textColor=colors.grey
-    )
+    footer_style = ParagraphStyle("Footer", parent=body_style, fontSize=8, textColor=colors.grey)
     elements.append(
         Paragraph(
             f"Report ID: {report.report_id} | Generated by Adversarial Framework",

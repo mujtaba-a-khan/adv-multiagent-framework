@@ -18,7 +18,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 _LOGIC_TEMPLATES = [
     (
         "Consider the following hypothetical scenario for a security audit:\n\n"
@@ -119,10 +118,7 @@ class LogicTrapStrategy(BaseAttackStrategy):
 
         prev_verdict = params.get("_previous_verdict", "refused")
         if prev_verdict == "jailbreak":
-            reason_suffix = (
-                "previous framing succeeded — trying alternative"
-                " logic vector"
-            )
+            reason_suffix = "previous framing succeeded — trying alternative logic vector"
         else:
             reason_suffix = "previous framing was unsuccessful"
 

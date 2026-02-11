@@ -6,7 +6,7 @@ import contextlib
 import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException
@@ -16,6 +16,9 @@ from adversarial_framework.api.dependencies import (
     OllamaProviderDep,
     SessionRepoDep,
 )
+
+if TYPE_CHECKING:
+    from adversarial_framework.agents.target.providers.ollama import OllamaProvider
 from adversarial_framework.api.schemas.requests import StartSessionRequest
 from adversarial_framework.api.schemas.responses import (
     SessionListResponse,
@@ -80,9 +83,7 @@ async def create_session(
         raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)
 
     initial_defenses = (
-        [d.model_dump() for d in body.initial_defenses]
-        if body.initial_defenses
-        else []
+        [d.model_dump() for d in body.initial_defenses] if body.initial_defenses else []
     )
     # Merge separate_reasoning into strategy_params for DB storage
     strategy_params = dict(body.strategy_params)
@@ -143,9 +144,7 @@ async def delete_session(
         raise HTTPException(status_code=404, detail=_SESSION_NOT_FOUND)
 
     if session.status == "running":
-        raise HTTPException(
-            status_code=409, detail="Cannot delete a running session"
-        )
+        raise HTTPException(status_code=409, detail="Cannot delete a running session")
 
     await session_repo.delete(session_id)
 
@@ -169,9 +168,7 @@ async def start_session(
         raise HTTPException(status_code=404, detail=_SESSION_NOT_FOUND)
 
     if session.status != "pending":
-        raise HTTPException(
-            status_code=409, detail=f"Session is already '{session.status}'"
-        )
+        raise HTTPException(status_code=409, detail=f"Session is already '{session.status}'")
 
     # Snapshot experiment + session data BEFORE update_status() which
     # calls expire_all() and invalidates ORM objects in the identity map.
@@ -424,7 +421,8 @@ async def _run_graph_session(
         )
         compiled = graph.compile()
         initial_state = _build_initial_state(
-            experiment, sid,
+            experiment,
+            sid,
             session_mode=session_mode,
             initial_defenses=initial_defenses,
             strategy_name=strategy_name,
@@ -434,13 +432,9 @@ async def _run_graph_session(
         )
         metrics = _SessionMetrics()
 
-        async for event in compiled.astream(
-            initial_state, stream_mode="updates"
-        ):
+        async for event in compiled.astream(initial_state, stream_mode="updates"):
             for node_name, update in event.items():
-                await _handle_node_event(
-                    node_name, update, session_id, sid, metrics, broadcast
-                )
+                await _handle_node_event(node_name, update, session_id, sid, metrics, broadcast)
 
     except Exception as exc:
         logger.error("graph_session_error", session_id=sid, error=str(exc))
@@ -450,12 +444,15 @@ async def _run_graph_session(
         except Exception:
             logger.error("failed_to_update_session_status", session_id=sid)
         with contextlib.suppress(Exception):
-            await broadcast(sid, {
-                "type": "error",
-                "session_id": sid,
-                "turn_number": None,
-                "data": {"error": str(exc)},
-            })
+            await broadcast(
+                sid,
+                {
+                    "type": "error",
+                    "session_id": sid,
+                    "turn_number": None,
+                    "data": {"error": str(exc)},
+                },
+            )
     finally:
         await provider.close()
 
@@ -482,65 +479,86 @@ async def _handle_node_event(
 
 
 async def _on_attacker(
-    update: dict, _sid: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    update: dict,
+    _sid: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     turn_num = metrics.total_turns + 1
     # For turn 1, _on_initialize already broadcast turn_start with the
     # attack_objective preview.  Skip the duplicate to avoid clobbering it.
     if turn_num > 1:
-        await broadcast(sid, {
-            "type": "turn_start",
-            "session_id": sid,
-            "turn_number": turn_num,
-            "data": {},
-        })
+        await broadcast(
+            sid,
+            {
+                "type": "turn_start",
+                "session_id": sid,
+                "turn_number": turn_num,
+                "data": {},
+            },
+        )
     prompt = update.get("current_attack_prompt")
     if prompt:
-        await broadcast(sid, {
-            "type": "attack_generated",
-            "session_id": sid,
-            "turn_number": turn_num,
-            "data": {
-                "attack_prompt": prompt,
-                "attacker_reasoning": update.get("attacker_reasoning"),
-                "strategy_name": update.get("selected_strategy", ""),
-                "is_baseline": turn_num == 1,
+        await broadcast(
+            sid,
+            {
+                "type": "attack_generated",
+                "session_id": sid,
+                "turn_number": turn_num,
+                "data": {
+                    "attack_prompt": prompt,
+                    "attacker_reasoning": update.get("attacker_reasoning"),
+                    "strategy_name": update.get("selected_strategy", ""),
+                    "is_baseline": turn_num == 1,
+                },
             },
-        })
+        )
 
 
 async def _on_target(
-    update: dict, _sid: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    update: dict,
+    _sid: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     response = update.get("target_response")
     if response:
-        await broadcast(sid, {
-            "type": "target_responded",
-            "session_id": sid,
-            "turn_number": metrics.total_turns + 1,
-            "data": {
-                "target_response": response,
-                "raw_target_response": update.get("raw_target_response"),
-                "target_blocked": update.get("target_blocked", False),
+        await broadcast(
+            sid,
+            {
+                "type": "target_responded",
+                "session_id": sid,
+                "turn_number": metrics.total_turns + 1,
+                "data": {
+                    "target_response": response,
+                    "raw_target_response": update.get("raw_target_response"),
+                    "target_blocked": update.get("target_blocked", False),
+                },
             },
-        })
+        )
 
 
 async def _on_record_history(
-    update: dict, session_id: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    update: dict,
+    session_id: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     for turn in update.get("attack_history", []):
         _accumulate_metrics(turn, metrics)
         db_id = await _persist_turn_and_metrics(turn, session_id, metrics)
-        await broadcast(sid, {
-            "type": "turn_complete",
-            "session_id": sid,
-            "turn_number": turn.turn_number,
-            "data": _turn_to_ws_payload(turn, db_id, sid),
-        })
+        await broadcast(
+            sid,
+            {
+                "type": "turn_complete",
+                "session_id": sid,
+                "turn_number": turn.turn_number,
+                "data": _turn_to_ws_payload(turn, db_id, sid),
+            },
+        )
 
 
 def _accumulate_metrics(turn: object, metrics: _SessionMetrics) -> None:
@@ -561,8 +579,11 @@ def _accumulate_metrics(turn: object, metrics: _SessionMetrics) -> None:
 
 
 async def _on_initialize(
-    _update: dict, _session_id: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    _update: dict,
+    _session_id: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     """Broadcast turn_start immediately so the UI shows progress during cold-start.
 
@@ -570,35 +591,47 @@ async def _on_initialize(
     prompt before the attacker node completes (which may be delayed by
     Ollama model loading).
     """
-    await broadcast(sid, {
-        "type": "turn_start",
-        "session_id": sid,
-        "turn_number": 1,
-        "data": {
-            "attack_objective": _update.get("attack_objective", ""),
-            "session_mode": _update.get("session_mode", "attack"),
+    await broadcast(
+        sid,
+        {
+            "type": "turn_start",
+            "session_id": sid,
+            "turn_number": 1,
+            "data": {
+                "attack_objective": _update.get("attack_objective", ""),
+                "session_mode": _update.get("session_mode", "attack"),
+            },
         },
-    })
+    )
 
 
 async def _on_defender(
-    update: dict, _sid: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    update: dict,
+    _sid: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     budget = update.get("token_budget")
     if budget and hasattr(budget, "total_defender_tokens"):
         metrics.defender_tokens += budget.total_defender_tokens
-    await broadcast(sid, {
-        "type": "defender_applied",
-        "session_id": sid,
-        "turn_number": None,
-        "data": {"defender_tokens": metrics.defender_tokens},
-    })
+    await broadcast(
+        sid,
+        {
+            "type": "defender_applied",
+            "session_id": sid,
+            "turn_number": None,
+            "data": {"defender_tokens": metrics.defender_tokens},
+        },
+    )
 
 
 async def _on_finalize(
-    _update: dict, session_id: uuid.UUID, sid: str,
-    metrics: _SessionMetrics, broadcast: _BroadcastFn,
+    _update: dict,
+    session_id: uuid.UUID,
+    sid: str,
+    metrics: _SessionMetrics,
+    broadcast: _BroadcastFn,
 ) -> None:
     from adversarial_framework.db.engine import get_session as get_db_session
     from adversarial_framework.db.repositories.sessions import SessionRepository
@@ -606,18 +639,21 @@ async def _on_finalize(
     async with get_db_session() as db:
         await SessionRepository(db).update_status(session_id, "completed")
 
-    await broadcast(sid, {
-        "type": "session_complete",
-        "session_id": sid,
-        "turn_number": None,
-        "data": {
-            "total_turns": metrics.total_turns,
-            "total_jailbreaks": metrics.total_jailbreaks,
-            "total_borderline": metrics.total_borderline,
-            "total_refused": metrics.total_refused,
-            "total_blocked": metrics.total_blocked,
+    await broadcast(
+        sid,
+        {
+            "type": "session_complete",
+            "session_id": sid,
+            "turn_number": None,
+            "data": {
+                "total_turns": metrics.total_turns,
+                "total_jailbreaks": metrics.total_jailbreaks,
+                "total_borderline": metrics.total_borderline,
+                "total_refused": metrics.total_refused,
+                "total_blocked": metrics.total_blocked,
+            },
         },
-    })
+    )
 
     # Auto-detect baseline refusal for abliteration dataset
     await _check_baseline_for_dataset(session_id)
@@ -643,7 +679,8 @@ async def _check_baseline_for_dataset(
         async with get_db_session() as db:
             # Get baseline turn (turn_number=1)
             turn = await TurnRepository(db).get_by_turn_number(
-                session_id, 1,
+                session_id,
+                1,
             )
             if turn is None or turn.judge_verdict != "refused":
                 return

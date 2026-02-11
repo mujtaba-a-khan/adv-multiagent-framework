@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,28 +36,17 @@ class ExperimentRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_all(
-        self, offset: int = 0, limit: int = 50
-    ) -> tuple[Sequence[Experiment], int]:
-        stmt = (
-            select(Experiment)
-            .order_by(Experiment.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
+    async def list_all(self, offset: int = 0, limit: int = 50) -> tuple[Sequence[Experiment], int]:
+        stmt = select(Experiment).order_by(Experiment.created_at.desc()).offset(offset).limit(limit)
         result = await self.session.execute(stmt)
         experiments = result.scalars().all()
 
-        count_result = await self.session.execute(
-            select(func.count()).select_from(Experiment)
-        )
+        count_result = await self.session.execute(select(func.count()).select_from(Experiment))
         total = count_result.scalar_one()
 
         return experiments, total
 
-    async def update(
-        self, experiment_id: uuid.UUID, **kwargs: object
-    ) -> Experiment | None:
+    async def update(self, experiment_id: uuid.UUID, **kwargs: object) -> Experiment | None:
         experiment = await self.get(experiment_id)
         if experiment is None:
             return None

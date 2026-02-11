@@ -68,11 +68,10 @@ class InMemoryVectorStore:
         scored: list[tuple[VectorEntry, float]] = []
 
         for entry in self._entries.values():
-            if filter_metadata:
-                if not all(
-                    entry.metadata.get(k) == v for k, v in filter_metadata.items()
-                ):
-                    continue
+            if filter_metadata and not all(
+                entry.metadata.get(k) == v for k, v in filter_metadata.items()
+            ):
+                continue
 
             sim = cosine_similarity(query_embedding, entry.embedding)
             if sim >= min_similarity:

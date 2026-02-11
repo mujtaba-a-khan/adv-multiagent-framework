@@ -51,9 +51,7 @@ class TestBaselineTurn:
         """Baseline behavior is the same regardless of selected strategy."""
         objective = "Test objective"
         for strategy_name in ("roleplay", "encoding", "prompt_extraction"):
-            agent = AttackerAgent(
-                config={"model": "mock-model"}, provider=mock_provider
-            )
+            agent = AttackerAgent(config={"model": "mock-model"}, provider=mock_provider)
             state: dict[str, Any] = {
                 "attack_objective": objective,
                 "current_turn": 0,
@@ -65,9 +63,7 @@ class TestBaselineTurn:
             assert result["current_attack_prompt"] == objective
             assert result["token_budget"].total_attacker_tokens == 0
 
-    async def test_baseline_works_for_llm_strategies(
-        self, mock_provider: MockProvider
-    ) -> None:
+    async def test_baseline_works_for_llm_strategies(self, mock_provider: MockProvider) -> None:
         """LLM-based strategies (pair) also skip on baseline turn."""
         agent = AttackerAgent(config={"model": "mock-model"}, provider=mock_provider)
         state: dict[str, Any] = {

@@ -280,12 +280,18 @@ class MastermindStrategy(BaseAttackStrategy):
 
         if separate:
             return await self._refine_two_call(
-                objective, previous_prompt, target_response,
-                judge_feedback, params,
+                objective,
+                previous_prompt,
+                target_response,
+                judge_feedback,
+                params,
             )
         return await self._refine_single_call(
-            objective, previous_prompt, target_response,
-            judge_feedback, params,
+            objective,
+            previous_prompt,
+            target_response,
+            judge_feedback,
+            params,
         )
 
     async def _refine_two_call(

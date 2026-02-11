@@ -28,11 +28,7 @@ def _build_judge_feedback(
     verdict = state.get("judge_verdict", JudgeVerdict.REFUSED)
     confidence = state.get("judge_confidence", 0.0)
     judge_reason = state.get("judge_reason")
-    v_str = (
-        verdict.value
-        if isinstance(verdict, JudgeVerdict)
-        else str(verdict)
-    )
+    v_str = verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
     parts = [f"Verdict: {v_str}", f"Confidence: {confidence}"]
     if judge_reason:
         parts.append(f"Reason: {judge_reason}")
@@ -60,10 +56,10 @@ class AttackerAgent(BaseAgent):
         strategy_name = strategy_config.get("name", "pair")
         strategy_params = dict(strategy_config.get("params", {}))
 
-        """ Merge persisted strategy metadata from previous turns 
-         Strategy metadata contains cycling state (template indices, encoding
-         types, escalation levels, etc.) that must persist across turns so
-         that each refinement produces a genuinely different prompt. """
+        # Merge persisted strategy metadata from previous turns.
+        # Strategy metadata contains cycling state (template indices, encoding
+        # types, escalation levels, etc.) that must persist across turns so
+        # that each refinement produces a genuinely different prompt.
 
         prev_metadata = state.get("strategy_metadata") or {}
         strategy_params.update(prev_metadata)
@@ -127,20 +123,14 @@ class AttackerAgent(BaseAgent):
 
                 strategy_params["_attack_history"] = attack_history
                 strategy_params["_previous_verdict"] = (
-                    verdict.value
-                    if isinstance(verdict, JudgeVerdict)
-                    else str(verdict)
+                    verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
                 )
 
                 logger.info(
                     "attacker_refine",
                     strategy=strategy_name,
                     turn=current_turn,
-                    prev_verdict=(
-                        verdict.value
-                        if isinstance(verdict, JudgeVerdict)
-                        else verdict
-                    ),
+                    prev_verdict=(verdict.value if isinstance(verdict, JudgeVerdict) else verdict),
                 )
                 result = await strategy.refine(
                     objective=objective,
@@ -184,9 +174,7 @@ class AttackerAgent(BaseAgent):
         return {
             "current_attack_prompt": result.prompt,
             "attacker_reasoning": (
-                result.reasoning
-                if strategy_params.get("separate_reasoning", True)
-                else None
+                result.reasoning if strategy_params.get("separate_reasoning", True) else None
             ),
             "selected_strategy": strategy_name,
             "strategy_params": strategy_params,

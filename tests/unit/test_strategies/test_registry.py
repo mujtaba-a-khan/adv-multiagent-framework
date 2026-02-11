@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from typing import Any
 
 from adversarial_framework.core.constants import AttackCategory
 from adversarial_framework.strategies.base import (
@@ -37,7 +36,9 @@ class TestStrategyRegistry:
             async def generate(self, objective, context, params):
                 return AttackResult(prompt="test", strategy_metadata={})
 
-            async def refine(self, objective, previous_prompt, target_response, judge_feedback, params):
+            async def refine(
+                self, objective, previous_prompt, target_response, judge_feedback, params
+            ):
                 return AttackResult(prompt="refined", strategy_metadata={})
 
         assert StrategyRegistry.get("dummy_test") is DummyStrategy
@@ -68,7 +69,9 @@ class TestStrategyRegistry:
             async def generate(self, objective, context, params):
                 return AttackResult(prompt="test", strategy_metadata={})
 
-            async def refine(self, objective, previous_prompt, target_response, judge_feedback, params):
+            async def refine(
+                self, objective, previous_prompt, target_response, judge_feedback, params
+            ):
                 return AttackResult(prompt="refined", strategy_metadata={})
 
         assert AnotherDummy.metadata.name == "another_dummy"
@@ -87,7 +90,9 @@ class TestStrategyRegistry:
             async def generate(self, objective, context, params):
                 return AttackResult(prompt="test", strategy_metadata={})
 
-            async def refine(self, objective, previous_prompt, target_response, judge_feedback, params):
+            async def refine(
+                self, objective, previous_prompt, target_response, judge_feedback, params
+            ):
                 return AttackResult(prompt="refined", strategy_metadata={})
 
         prompt_strategies = StrategyRegistry.list_by_category(AttackCategory.PROMPT_LEVEL)
@@ -108,10 +113,13 @@ class TestStrategyRegistry:
             async def generate(self, objective, context, params):
                 return AttackResult(prompt="test", strategy_metadata={})
 
-            async def refine(self, objective, previous_prompt, target_response, judge_feedback, params):
+            async def refine(
+                self, objective, previous_prompt, target_response, judge_feedback, params
+            ):
                 return AttackResult(prompt="refined", strategy_metadata={})
 
         with pytest.raises(ValueError, match="already registered"):
+
             @StrategyRegistry.register
             class DupB(BaseAttackStrategy):
                 metadata = StrategyMetadata(
@@ -125,5 +133,7 @@ class TestStrategyRegistry:
                 async def generate(self, objective, context, params):
                     return AttackResult(prompt="test", strategy_metadata={})
 
-                async def refine(self, objective, previous_prompt, target_response, judge_feedback, params):
+                async def refine(
+                    self, objective, previous_prompt, target_response, judge_feedback, params
+                ):
                     return AttackResult(prompt="refined", strategy_metadata={})

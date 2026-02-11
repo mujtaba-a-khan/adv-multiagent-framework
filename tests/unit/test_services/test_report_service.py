@@ -7,7 +7,6 @@ import json
 from adversarial_framework.core.constants import JudgeVerdict
 from adversarial_framework.services.report_service import (
     Finding,
-    ReportData,
     export_report_json,
     export_report_summary,
     generate_report,

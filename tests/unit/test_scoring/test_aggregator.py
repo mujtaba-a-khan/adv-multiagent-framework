@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from adversarial_framework.scoring.aggregator import (
-    ExperimentSummary,
     StrategyEffectiveness,
     aggregate_sessions,
 )

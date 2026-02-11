@@ -11,7 +11,7 @@ import base64
 import os
 import secrets
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
@@ -63,9 +63,7 @@ class KeyEncryptor:
     _SALT_LENGTH = 16
 
     def __init__(self, master_secret: str | None = None) -> None:
-        self._master_secret = master_secret or os.environ.get(
-            "ADV_ENCRYPTION_KEY", ""
-        )
+        self._master_secret = master_secret or os.environ.get("ADV_ENCRYPTION_KEY", "")
         if not self._master_secret:
             raise ValueError(
                 "Encryption master secret is required. "

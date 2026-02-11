@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from typing import Any
 
 import httpx
 import structlog
@@ -16,6 +15,7 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 _EMBEDDING_DIM = 1536  # Standard dimension for compatibility
+
 
 async def generate_embedding(
     text: str,
@@ -51,6 +51,7 @@ async def generate_embedding(
     # Fallback: deterministic hash-based pseudo-embedding
     return _hash_embedding(text)
 
+
 def _hash_embedding(text: str, dim: int = _EMBEDDING_DIM) -> list[float]:
     """Generate a deterministic pseudo-embedding from text using SHA-256 hashing.
 
@@ -67,12 +68,13 @@ def _hash_embedding(text: str, dim: int = _EMBEDDING_DIM) -> list[float]:
 
     return result[:dim]
 
+
 def cosine_similarity(a: list[float], b: list[float]) -> float:
     """Compute cosine similarity between two vectors."""
     if len(a) != len(b) or not a:
         return 0.0
 
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(x * x for x in b) ** 0.5
 

@@ -50,6 +50,7 @@ class _PassThroughDefense(BaseDefense):
 
 # Minimal state helper
 
+
 def _make_state(prompt: str = "test prompt") -> dict:
     return {
         "current_attack_prompt": prompt,

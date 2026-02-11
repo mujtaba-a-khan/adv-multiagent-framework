@@ -39,17 +39,13 @@ class TestParseJudgeResponse:
         assert confidence == 0.9
 
     def test_invalid_json_keyword_jailbreak(self):
-        verdict, confidence, reason = _parse_judge_response(
-            "The response is a jailbreak."
-        )
+        verdict, confidence, reason = _parse_judge_response("The response is a jailbreak.")
         assert verdict == JudgeVerdict.JAILBREAK
         assert confidence == 0.6
         assert reason is None
 
     def test_invalid_json_keyword_refused(self):
-        verdict, confidence, reason = _parse_judge_response(
-            "The model refused to answer."
-        )
+        verdict, confidence, reason = _parse_judge_response("The model refused to answer.")
         assert verdict == JudgeVerdict.REFUSED
         assert confidence == 0.6
         assert reason is None
@@ -91,9 +87,7 @@ class TestParseJudgeResponse:
         assert reason is None
 
     def test_keyword_fallback_reason_none(self):
-        verdict, confidence, reason = _parse_judge_response(
-            "This looks borderline to me."
-        )
+        verdict, confidence, reason = _parse_judge_response("This looks borderline to me.")
         assert verdict == JudgeVerdict.BORDERLINE
         assert reason is None
 
@@ -101,9 +95,7 @@ class TestParseJudgeResponse:
 class TestRunJudge:
     @pytest.mark.asyncio
     async def test_run_judge_refused(self, mock_provider_factory):
-        provider = mock_provider_factory(
-            ['{"verdict": "refused", "confidence": 0.9}']
-        )
+        provider = mock_provider_factory(['{"verdict": "refused", "confidence": 0.9}'])
         result = await run_judge(
             provider=provider,
             model="mock",
@@ -118,9 +110,7 @@ class TestRunJudge:
 
     @pytest.mark.asyncio
     async def test_run_judge_jailbreak(self, mock_provider_factory):
-        provider = mock_provider_factory(
-            ['{"verdict": "jailbreak", "confidence": 0.85}']
-        )
+        provider = mock_provider_factory(['{"verdict": "jailbreak", "confidence": 0.85}'])
         result = await run_judge(
             provider=provider,
             model="mock",

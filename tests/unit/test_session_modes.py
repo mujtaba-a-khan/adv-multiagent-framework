@@ -148,9 +148,7 @@ class TestBuildGraphDefenseLoading:
         """Defense mode should load rule_based defense onto TargetInterface."""
         from adversarial_framework.core.graph import build_graph
 
-        with patch(
-            "adversarial_framework.core.graph.TargetInterface"
-        ) as mock_target_cls:
+        with patch("adversarial_framework.core.graph.TargetInterface") as mock_target_cls:
             mock_target = MagicMock()
             mock_target_cls.return_value = mock_target
 
@@ -179,9 +177,7 @@ class TestBuildGraphDefenseLoading:
         """Attack mode should ignore initial_defenses even if provided."""
         from adversarial_framework.core.graph import build_graph
 
-        with patch(
-            "adversarial_framework.core.graph.TargetInterface"
-        ) as mock_target_cls:
+        with patch("adversarial_framework.core.graph.TargetInterface") as mock_target_cls:
             mock_target = MagicMock()
             mock_target_cls.return_value = mock_target
 
@@ -302,7 +298,9 @@ class TestRequestSchemaValidation:
         from adversarial_framework.api.schemas.requests import StartSessionRequest
 
         req = StartSessionRequest(
-            strategy_name="pair", max_turns=20, max_cost_usd=10.0,
+            strategy_name="pair",
+            max_turns=20,
+            max_cost_usd=10.0,
         )
         assert req.session_mode == "attack"
         assert req.initial_defenses is None
@@ -365,11 +363,15 @@ class TestRequestSchemaValidation:
 
         with pytest.raises(ValidationError):
             StartSessionRequest(
-                strategy_name="pair", max_turns=0, max_cost_usd=10.0,
+                strategy_name="pair",
+                max_turns=0,
+                max_cost_usd=10.0,
             )
         with pytest.raises(ValidationError):
             StartSessionRequest(
-                strategy_name="pair", max_turns=101, max_cost_usd=10.0,
+                strategy_name="pair",
+                max_turns=101,
+                max_cost_usd=10.0,
             )
 
     def test_max_cost_validation(self):
@@ -380,9 +382,13 @@ class TestRequestSchemaValidation:
 
         with pytest.raises(ValidationError):
             StartSessionRequest(
-                strategy_name="pair", max_turns=20, max_cost_usd=-1.0,
+                strategy_name="pair",
+                max_turns=20,
+                max_cost_usd=-1.0,
             )
         with pytest.raises(ValidationError):
             StartSessionRequest(
-                strategy_name="pair", max_turns=20, max_cost_usd=501.0,
+                strategy_name="pair",
+                max_turns=20,
+                max_cost_usd=501.0,
             )

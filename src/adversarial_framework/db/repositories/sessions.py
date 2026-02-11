@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from typing import Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,11 +29,7 @@ class SessionRepository:
         return await self.db.get(Session, session_id)
 
     async def get_with_turns(self, session_id: uuid.UUID) -> Session | None:
-        stmt = (
-            select(Session)
-            .where(Session.id == session_id)
-            .options(selectinload(Session.turns))
-        )
+        stmt = select(Session).where(Session.id == session_id).options(selectinload(Session.turns))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -51,28 +47,20 @@ class SessionRepository:
         sessions = result.scalars().all()
 
         count_result = await self.db.execute(
-            select(func.count()).select_from(Session).where(
-                Session.experiment_id == experiment_id
-            )
+            select(func.count()).select_from(Session).where(Session.experiment_id == experiment_id)
         )
         total = count_result.scalar_one()
 
         return sessions, total
 
-    async def update_status(
-        self, session_id: uuid.UUID, status: str
-    ) -> None:
+    async def update_status(self, session_id: uuid.UUID, status: str) -> None:
         extras: dict = {}
         if status == "running":
-            extras["started_at"] = datetime.now(timezone.utc)
+            extras["started_at"] = datetime.now(UTC)
         elif status in ("completed", "failed", "cancelled"):
-            extras["completed_at"] = datetime.now(timezone.utc)
+            extras["completed_at"] = datetime.now(UTC)
 
-        stmt = (
-            update(Session)
-            .where(Session.id == session_id)
-            .values(status=status, **extras)
-        )
+        stmt = update(Session).where(Session.id == session_id).values(status=status, **extras)
         await self.db.execute(stmt)
         # Core UPDATE bypasses ORM identity map; expire cached objects
         # so subsequent get() calls return fresh DB values.

@@ -41,9 +41,7 @@ async def run_sft(
     """
     # Step 1: Memory check
     await on_progress(0.0, "Checking memory feasibility")
-    feasible, reason = check_memory_feasibility(
-        source_model, "sft"
-    )
+    feasible, reason = check_memory_feasibility(source_model, "sft")
     if not feasible:
         raise RuntimeError(f"Insufficient memory: {reason}")
 
@@ -60,9 +58,7 @@ async def run_sft(
         raise RuntimeError("SFT requires a dataset_path in config")
 
     if not Path(dataset_path).exists():
-        raise RuntimeError(
-            f"Dataset not found: {dataset_path}"
-        )
+        raise RuntimeError(f"Dataset not found: {dataset_path}")
 
     lora_rank = config.get("lora_rank", 8)
     lora_alpha = config.get("lora_alpha", 16)
@@ -117,9 +113,7 @@ async def run_sft(
 
         returncode = await process.wait()
         if returncode != 0:
-            raise RuntimeError(
-                f"mlx_lm.lora failed with code {returncode}"
-            )
+            raise RuntimeError(f"mlx_lm.lora failed with code {returncode}")
 
         await on_progress(80.0, "Training complete")
 
@@ -164,6 +158,4 @@ async def run_sft(
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
 
-    logger.info(
-        "sft_complete", source=source_model, output=output_name
-    )
+    logger.info("sft_complete", source=source_model, output=output_name)

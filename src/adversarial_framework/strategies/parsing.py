@@ -91,11 +91,7 @@ def sanitize_attack_prompt(text: str) -> str:
     """
     result = strip_think_tags(text)
     # Strip full-string wrapping quotes (ASCII + curly)
-    if (
-        len(result) >= 2
-        and result[0] in ('"', "\u201c")
-        and result[-1] in ('"', "\u201d")
-    ):
+    if len(result) >= 2 and result[0] in ('"', "\u201c") and result[-1] in ('"', "\u201d"):
         result = result[1:-1].strip()
     for pattern in _PREAMBLE_PATTERNS:
         result = pattern.sub("", result).strip()
@@ -111,6 +107,7 @@ def detect_refusal(text: str) -> bool:
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ReasonedAttack:
     """Separated reasoning and clean prompt from the attacker LLM."""
@@ -123,6 +120,7 @@ class ReasonedAttack:
 # ---------------------------------------------------------------------------
 # Two-call pattern (primary, model-agnostic)
 # ---------------------------------------------------------------------------
+
 
 async def generate_with_reasoning(
     provider: BaseProvider,
@@ -181,7 +179,8 @@ async def generate_with_reasoning(
 
     # --- Call 2: Attack (with reasoning as assistant context) ---
     enriched_attack_messages = _inject_reasoning_context(
-        attack_messages, reasoning,
+        attack_messages,
+        reasoning,
     )
 
     attack_response = await provider.generate(
@@ -192,10 +191,7 @@ async def generate_with_reasoning(
         **kwargs,
     )
     clean_prompt = sanitize_attack_prompt(attack_response.content)
-    total_tokens = (
-        think_response.usage.total_tokens
-        + attack_response.usage.total_tokens
-    )
+    total_tokens = think_response.usage.total_tokens + attack_response.usage.total_tokens
 
     # --- Retry once if attacker LLM refused ---
     if detect_refusal(clean_prompt):
@@ -266,6 +262,7 @@ def _inject_reasoning_context(
 # Single-call with retry (for separate_reasoning=False paths)
 # ---------------------------------------------------------------------------
 
+
 async def single_call_with_retry(
     provider: BaseProvider,
     *,
@@ -312,6 +309,7 @@ async def single_call_with_retry(
 # ---------------------------------------------------------------------------
 # Single-call regex fallback (best-effort extraction)
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class ParsedAttackOutput:

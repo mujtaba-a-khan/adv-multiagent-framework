@@ -23,20 +23,14 @@ class PlaygroundRepository:
 
     # Conversation CRUD
 
-    async def create_conversation(
-        self, **kwargs: Any
-    ) -> PlaygroundConversation:
+    async def create_conversation(self, **kwargs: Any) -> PlaygroundConversation:
         conversation = PlaygroundConversation(**kwargs)
         self.db.add(conversation)
         await self.db.flush()
         return conversation
 
-    async def get_conversation(
-        self, conversation_id: uuid.UUID
-    ) -> PlaygroundConversation | None:
-        return await self.db.get(
-            PlaygroundConversation, conversation_id
-        )
+    async def get_conversation(self, conversation_id: uuid.UUID) -> PlaygroundConversation | None:
+        return await self.db.get(PlaygroundConversation, conversation_id)
 
     async def list_conversations(
         self, offset: int = 0, limit: int = 50
@@ -51,9 +45,7 @@ class PlaygroundRepository:
         conversations = result.scalars().all()
 
         count_result = await self.db.execute(
-            select(func.count()).select_from(
-                PlaygroundConversation
-            )
+            select(func.count()).select_from(PlaygroundConversation)
         )
         total = count_result.scalar_one()
         return conversations, total
@@ -70,9 +62,7 @@ class PlaygroundRepository:
         await self.db.refresh(conversation)
         return conversation
 
-    async def delete_conversation(
-        self, conversation_id: uuid.UUID
-    ) -> bool:
+    async def delete_conversation(self, conversation_id: uuid.UUID) -> bool:
         conversation = await self.get_conversation(conversation_id)
         if conversation is None:
             return False
@@ -82,12 +72,8 @@ class PlaygroundRepository:
 
     # Message CRUD
 
-    async def create_message(
-        self, conversation_id: uuid.UUID, **kwargs: Any
-    ) -> PlaygroundMessage:
-        message = PlaygroundMessage(
-            conversation_id=conversation_id, **kwargs
-        )
+    async def create_message(self, conversation_id: uuid.UUID, **kwargs: Any) -> PlaygroundMessage:
+        message = PlaygroundMessage(conversation_id=conversation_id, **kwargs)
         self.db.add(message)
         await self.db.flush()
         return message
@@ -100,10 +86,7 @@ class PlaygroundRepository:
     ) -> tuple[Sequence[PlaygroundMessage], int]:
         stmt = (
             select(PlaygroundMessage)
-            .where(
-                PlaygroundMessage.conversation_id
-                == conversation_id
-            )
+            .where(PlaygroundMessage.conversation_id == conversation_id)
             .order_by(PlaygroundMessage.message_number.asc())
             .offset(offset)
             .limit(limit)
@@ -114,10 +97,7 @@ class PlaygroundRepository:
         count_result = await self.db.execute(
             select(func.count())
             .select_from(PlaygroundMessage)
-            .where(
-                PlaygroundMessage.conversation_id
-                == conversation_id
-            )
+            .where(PlaygroundMessage.conversation_id == conversation_id)
         )
         total = count_result.scalar_one()
         return messages, total

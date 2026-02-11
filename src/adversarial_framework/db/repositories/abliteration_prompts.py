@@ -23,17 +23,13 @@ class AbliterationPromptRepository:
         await self.db.flush()
         return prompt
 
-    async def create_many(
-        self, prompts: list[dict[str, object]]
-    ) -> list[AbliterationPrompt]:
+    async def create_many(self, prompts: list[dict[str, object]]) -> list[AbliterationPrompt]:
         objects = [AbliterationPrompt(**p) for p in prompts]
         self.db.add_all(objects)
         await self.db.flush()
         return objects
 
-    async def get(
-        self, prompt_id: uuid.UUID
-    ) -> AbliterationPrompt | None:
+    async def get(self, prompt_id: uuid.UUID) -> AbliterationPrompt | None:
         return await self.db.get(AbliterationPrompt, prompt_id)
 
     async def list_all(
@@ -57,19 +53,11 @@ class AbliterationPromptRepository:
         )
 
         if category is not None:
-            stmt = stmt.where(
-                AbliterationPrompt.category == category
-            )
-            count_stmt = count_stmt.where(
-                AbliterationPrompt.category == category
-            )
+            stmt = stmt.where(AbliterationPrompt.category == category)
+            count_stmt = count_stmt.where(AbliterationPrompt.category == category)
         if source is not None:
-            stmt = stmt.where(
-                AbliterationPrompt.source == source
-            )
-            count_stmt = count_stmt.where(
-                AbliterationPrompt.source == source
-            )
+            stmt = stmt.where(AbliterationPrompt.source == source)
+            count_stmt = count_stmt.where(AbliterationPrompt.source == source)
 
         result = await self.db.execute(stmt)
         prompts = result.scalars().all()
@@ -79,9 +67,7 @@ class AbliterationPromptRepository:
 
         return prompts, total
 
-    async def list_by_category(
-        self, category: str
-    ) -> Sequence[AbliterationPrompt]:
+    async def list_by_category(self, category: str) -> Sequence[AbliterationPrompt]:
         """Return ALL active prompts of a category (used by pipeline)."""
         stmt = (
             select(AbliterationPrompt)
@@ -130,9 +116,7 @@ class AbliterationPromptRepository:
 
         return prompts, total
 
-    async def confirm(
-        self, prompt_id: uuid.UUID
-    ) -> AbliterationPrompt | None:
+    async def confirm(self, prompt_id: uuid.UUID) -> AbliterationPrompt | None:
         """Change status from 'suggested' to 'active'."""
         await self.db.execute(
             update(AbliterationPrompt)
@@ -172,9 +156,7 @@ class AbliterationPromptRepository:
             return await self.get(prompt_id)
 
         await self.db.execute(
-            update(AbliterationPrompt)
-            .where(AbliterationPrompt.id == prompt_id)
-            .values(**values)
+            update(AbliterationPrompt).where(AbliterationPrompt.id == prompt_id).values(**values)
         )
         return await self.get(prompt_id)
 
@@ -187,7 +169,5 @@ class AbliterationPromptRepository:
         return True
 
     async def delete_all(self) -> int:
-        result = await self.db.execute(
-            delete(AbliterationPrompt)
-        )
+        result = await self.db.execute(delete(AbliterationPrompt))
         return result.rowcount  # type: ignore[return-value]

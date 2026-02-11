@@ -20,7 +20,6 @@ from adversarial_framework.strategies.base import (
 )
 from adversarial_framework.strategies.registry import StrategyRegistry
 
-
 # ── Domain-Expert Opening Templates ──────────────────────────────────────────
 # Keyed by domain; each opens a conversation at an expert level.
 
@@ -115,14 +114,51 @@ def _detect_domain(objective: str) -> str:
     """Heuristically determine the domain from the objective text."""
     lower = objective.lower()
     domain_keywords: dict[str, list[str]] = {
-        "cybersecurity": ["hack", "exploit", "vulnerability", "malware", "phish", "attack",
-                          "penetration", "cyber", "network", "password"],
-        "chemistry": ["chemical", "synthesis", "compound", "reaction", "reagent",
-                       "molecule", "substance", "acid", "catalyst"],
-        "biology": ["virus", "pathogen", "bacteria", "biological", "toxin",
-                     "genetic", "organism", "cell", "protein"],
-        "engineering": ["build", "construct", "device", "mechanism", "system",
-                        "circuit", "design", "manufacture", "fabricat"],
+        "cybersecurity": [
+            "hack",
+            "exploit",
+            "vulnerability",
+            "malware",
+            "phish",
+            "attack",
+            "penetration",
+            "cyber",
+            "network",
+            "password",
+        ],
+        "chemistry": [
+            "chemical",
+            "synthesis",
+            "compound",
+            "reaction",
+            "reagent",
+            "molecule",
+            "substance",
+            "acid",
+            "catalyst",
+        ],
+        "biology": [
+            "virus",
+            "pathogen",
+            "bacteria",
+            "biological",
+            "toxin",
+            "genetic",
+            "organism",
+            "cell",
+            "protein",
+        ],
+        "engineering": [
+            "build",
+            "construct",
+            "device",
+            "mechanism",
+            "system",
+            "circuit",
+            "design",
+            "manufacture",
+            "fabricat",
+        ],
     }
     for domain, keywords in domain_keywords.items():
         if any(kw in lower for kw in keywords):

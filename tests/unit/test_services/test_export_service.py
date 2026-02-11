@@ -42,21 +42,35 @@ class TestExportTurnsCsv:
         # Need at least one row — empty list returns empty string
         turns = [
             {
-                "turn_number": 1, "strategy_name": "pair",
-                "attack_prompt": "p", "target_response": "r",
-                "target_blocked": False, "judge_verdict": "refused",
-                "judge_confidence": 0.9, "severity_score": None,
-                "specificity_score": None, "coherence_score": None,
-                "vulnerability_category": None, "attack_technique": None,
+                "turn_number": 1,
+                "strategy_name": "pair",
+                "attack_prompt": "p",
+                "target_response": "r",
+                "target_blocked": False,
+                "judge_verdict": "refused",
+                "judge_confidence": 0.9,
+                "severity_score": None,
+                "specificity_score": None,
+                "coherence_score": None,
+                "vulnerability_category": None,
+                "attack_technique": None,
             },
         ]
         result = export_turns_csv(turns)
         reader = csv.DictReader(io.StringIO(result))
         expected_fields = {
-            "turn_number", "strategy_name", "attack_prompt", "target_response",
-            "target_blocked", "judge_verdict", "judge_confidence",
-            "severity_score", "specificity_score", "coherence_score",
-            "vulnerability_category", "attack_technique",
+            "turn_number",
+            "strategy_name",
+            "attack_prompt",
+            "target_response",
+            "target_blocked",
+            "judge_verdict",
+            "judge_confidence",
+            "severity_score",
+            "specificity_score",
+            "coherence_score",
+            "vulnerability_category",
+            "attack_technique",
         }
         assert set(reader.fieldnames or []) == expected_fields
 
@@ -106,10 +120,7 @@ class TestExportTurnsJsonl:
         assert parsed["turn_number"] == 1
 
     def test_multiple_lines(self) -> None:
-        turns = [
-            {"turn_number": i, "data": f"turn-{i}"}
-            for i in range(3)
-        ]
+        turns = [{"turn_number": i, "data": f"turn-{i}"} for i in range(3)]
         result = export_turns_jsonl(turns)
         lines = result.strip().split("\n")
         assert len(lines) == 3
@@ -154,18 +165,27 @@ class TestExportFindingsCsv:
         # Need at least one row — empty list returns empty string
         findings = [
             {
-                "turn_number": 1, "strategy_name": "pair",
-                "vulnerability_category": "test", "severity": 5.0,
-                "specificity": 4.0, "technique_label": "pair",
-                "attack_prompt_preview": "p", "response_preview": "r",
+                "turn_number": 1,
+                "strategy_name": "pair",
+                "vulnerability_category": "test",
+                "severity": 5.0,
+                "specificity": 4.0,
+                "technique_label": "pair",
+                "attack_prompt_preview": "p",
+                "response_preview": "r",
             },
         ]
         result = export_findings_csv(findings)
         reader = csv.DictReader(io.StringIO(result))
         expected_fields = {
-            "turn_number", "strategy_name", "vulnerability_category",
-            "severity", "specificity", "technique_label",
-            "attack_prompt_preview", "response_preview",
+            "turn_number",
+            "strategy_name",
+            "vulnerability_category",
+            "severity",
+            "specificity",
+            "technique_label",
+            "attack_prompt_preview",
+            "response_preview",
         }
         assert set(reader.fieldnames or []) == expected_fields
 

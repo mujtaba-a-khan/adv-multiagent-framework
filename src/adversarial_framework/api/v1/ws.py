@@ -6,7 +6,7 @@ updates as the LangGraph adversarial loop executes.
 
 from __future__ import annotations
 
-import uuid
+import contextlib
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -67,10 +67,8 @@ async def ws_finetuning(websocket: WebSocket, job_id: str) -> None:
         logger.info("ft_ws_disconnected", job_id=job_id)
     finally:
         if job_id in _ft_connections:
-            try:
+            with contextlib.suppress(ValueError):
                 _ft_connections[job_id].remove(websocket)
-            except ValueError:
-                pass
             if not _ft_connections[job_id]:
                 del _ft_connections[job_id]
 
@@ -80,9 +78,7 @@ async def ws_finetuning(websocket: WebSocket, job_id: str) -> None:
 _pg_connections: dict[str, list[WebSocket]] = {}
 
 
-async def broadcast_playground(
-    conversation_id: str, message: dict
-) -> None:
+async def broadcast_playground(conversation_id: str, message: dict) -> None:
     """Send a message to all WebSocket clients watching a playground."""
     clients = _pg_connections.get(conversation_id, [])
     disconnected: list[WebSocket] = []
@@ -96,9 +92,7 @@ async def broadcast_playground(
 
 
 @router.websocket("/ws/playground/{conversation_id}")
-async def ws_playground(
-    websocket: WebSocket, conversation_id: str
-) -> None:
+async def ws_playground(websocket: WebSocket, conversation_id: str) -> None:
     """WebSocket endpoint for live playground updates."""
     await websocket.accept()
 
@@ -106,9 +100,7 @@ async def ws_playground(
         _pg_connections[conversation_id] = []
     _pg_connections[conversation_id].append(websocket)
 
-    logger.info(
-        "pg_ws_connected", conversation_id=conversation_id
-    )
+    logger.info("pg_ws_connected", conversation_id=conversation_id)
 
     try:
         while True:
@@ -120,17 +112,14 @@ async def ws_playground(
         )
     finally:
         if conversation_id in _pg_connections:
-            try:
-                _pg_connections[conversation_id].remove(
-                    websocket
-                )
-            except ValueError:
-                pass
+            with contextlib.suppress(ValueError):
+                _pg_connections[conversation_id].remove(websocket)
             if not _pg_connections[conversation_id]:
                 del _pg_connections[conversation_id]
 
 
 # Session connections
+
 
 @router.websocket("/ws/{session_id}")
 async def ws_session(websocket: WebSocket, session_id: str) -> None:
@@ -163,9 +152,7 @@ async def ws_session(websocket: WebSocket, session_id: str) -> None:
         logger.info("ws_disconnected", session_id=session_id)
     finally:
         if session_id in _connections:
-            try:
+            with contextlib.suppress(ValueError):
                 _connections[session_id].remove(websocket)
-            except ValueError:
-                pass
             if not _connections[session_id]:
                 del _connections[session_id]

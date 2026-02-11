@@ -43,9 +43,7 @@ class TokenBucketRateLimiter:
         default_refill_rate: float = 1.0,
         key_prefix: str = "ratelimit",
     ) -> None:
-        self._redis: aioredis.Redis = aioredis.from_url(
-            redis_url, decode_responses=True
-        )
+        self._redis: aioredis.Redis = aioredis.from_url(redis_url, decode_responses=True)
         self._default_capacity = default_capacity
         self._default_refill_rate = default_refill_rate
         self._key_prefix = key_prefix
@@ -122,9 +120,7 @@ class TokenBucketRateLimiter:
         return {allowed, math.floor(remaining), tostring(retry_after)}
         """
 
-        result = await self._redis.eval(
-            lua_script, 1, key, cap, rate, now, tokens
-        )
+        result = await self._redis.eval(lua_script, 1, key, cap, rate, now, tokens)
         allowed = bool(result[0])
         remaining = int(result[1])
         retry_after = float(result[2])

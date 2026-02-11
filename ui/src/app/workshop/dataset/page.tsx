@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   AlertTriangle,
@@ -225,7 +225,7 @@ export default function DatasetPage() {
 
   // ── Batch generation ─────────────────────────────────────────
 
-  const handleGenerateAll = useCallback(async () => {
+  const handleGenerateAll = async () => {
     if (!selectedModel || unpairedHarmful.length === 0) return;
     setIsGeneratingAll(true);
     shouldStopRef.current = false;
@@ -257,7 +257,7 @@ export default function DatasetPage() {
     } else {
       toast.success("All counterparts generated");
     }
-  }, [selectedModel, unpairedHarmful, generateMutation]);
+  };
 
   const handleStopGeneration = () => {
     shouldStopRef.current = true;

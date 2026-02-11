@@ -1,6 +1,6 @@
 "use client";
 
-import { Cell, Pie, PieChart, Tooltip } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,

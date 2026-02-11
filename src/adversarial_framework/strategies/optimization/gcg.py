@@ -115,10 +115,7 @@ class GCGStrategy(BaseAttackStrategy):
         iteration = int(params.get("iteration", 0)) + 1
 
         # Black-box: generate candidates by mutating the best suffix
-        candidates = [
-            _mutate_suffix(best_suffix, mutation_rate)
-            for _ in range(num_candidates)
-        ]
+        candidates = [_mutate_suffix(best_suffix, mutation_rate) for _ in range(num_candidates)]
         # Select a random candidate (in white-box mode this would be gradient-guided)
         new_suffix = random.choice(candidates)
         prompt = f"{objective} {new_suffix}"

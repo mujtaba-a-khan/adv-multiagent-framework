@@ -350,9 +350,7 @@ class TAPStrategy(BaseAttackStrategy):
                 total_tokens += result.total_tokens
                 candidate_prompt = result.prompt
                 if result.reasoning:
-                    all_reasoning.append(
-                        f"[Branch {i + 1}] {result.reasoning}"
-                    )
+                    all_reasoning.append(f"[Branch {i + 1}] {result.reasoning}")
             else:
                 # Single-call mode per branch
                 branch_msg = _SINGLE_TAP_BRANCH.format(
@@ -364,21 +362,19 @@ class TAPStrategy(BaseAttackStrategy):
                     candidate_num=i + 1,
                     total_candidates=num_candidates,
                 )
-                candidate_prompt, branch_tokens = (
-                    await single_call_with_retry(
-                        self.provider,
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": _SINGLE_TAP_SYSTEM.format(
-                                    objective=objective,
-                                ),
-                            },
-                            {"role": "user", "content": branch_msg},
-                        ],
-                        model=attacker_model,
-                        temperature=temperature,
-                    )
+                candidate_prompt, branch_tokens = await single_call_with_retry(
+                    self.provider,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": _SINGLE_TAP_SYSTEM.format(
+                                objective=objective,
+                            ),
+                        },
+                        {"role": "user", "content": branch_msg},
+                    ],
+                    model=attacker_model,
+                    temperature=temperature,
                 )
                 total_tokens += branch_tokens
 
@@ -414,9 +410,7 @@ class TAPStrategy(BaseAttackStrategy):
             best_prompt = candidate_prompt  # noqa: F821
             best_score = 0.0
 
-        combined_reasoning = (
-            "\n\n".join(all_reasoning) if all_reasoning else None
-        )
+        combined_reasoning = "\n\n".join(all_reasoning) if all_reasoning else None
 
         return AttackResult(
             prompt=best_prompt,

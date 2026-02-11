@@ -29,7 +29,8 @@ logger = structlog.get_logger(__name__)
 
 
 def _print_node_event(
-    node_name: str, updates: dict[str, object],
+    node_name: str,
+    updates: dict[str, object],
 ) -> None:
     """Print a formatted CLI line for a single graph node event."""
     from adversarial_framework.core.constants import JudgeVerdict
@@ -50,23 +51,14 @@ def _print_node_event(
     elif node_name == "analyzer":
         verdict = updates.get("judge_verdict")
         confidence = updates.get("judge_confidence", 0)
-        v_str = (
-            verdict.value
-            if isinstance(verdict, JudgeVerdict)
-            else str(verdict)
-        )
-        click.echo(
-            f"  JUDGE   → {v_str.upper()} "
-            f"(confidence: {confidence:.2f})"
-        )
+        v_str = verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
+        click.echo(f"  JUDGE   → {v_str.upper()} (confidence: {confidence:.2f})")
         severity = updates.get("severity_score")
         if severity is not None:
             spec = updates.get("specificity_score", 0)
             coh = updates.get("coherence_score", 0)
             click.echo(
-                f"  SCORES  → severity={severity:.0f} "
-                f"specificity={spec:.0f} "
-                f"coherence={coh:.0f}"
+                f"  SCORES  → severity={severity:.0f} specificity={spec:.0f} coherence={coh:.0f}"
             )
         click.echo("-" * 60)
     elif node_name == "finalize":
@@ -187,9 +179,7 @@ async def _run_session(
     click.echo(f"  Blocked:          {final_state.get('total_blocked', 0)}")
     if isinstance(budget, TokenBudget):
         total = (
-            budget.total_attacker_tokens
-            + budget.total_target_tokens
-            + budget.total_analyzer_tokens
+            budget.total_attacker_tokens + budget.total_target_tokens + budget.total_analyzer_tokens
         )
         click.echo(f"  Total tokens:     {total}")
     click.echo()
@@ -199,7 +189,8 @@ async def _run_session(
 
 @click.command("adversarial")
 @click.option(
-    "--target", "target_model",
+    "--target",
+    "target_model",
     default=None,
     help="Target model Ollama tag (e.g. llama3:8b).",
 )

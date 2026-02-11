@@ -113,8 +113,7 @@ class PersuasionStrategy(BaseAttackStrategy):
             prompt=prompt,
             strategy_metadata={"technique": name, "iteration": 0},
             reasoning=(
-                f"Applying '{name}' persuasion technique from Zeng taxonomy to influence"
-                " compliance"
+                f"Applying '{name}' persuasion technique from Zeng taxonomy to influence compliance"
             ),
             token_usage=0,
         )
@@ -139,19 +138,13 @@ class PersuasionStrategy(BaseAttackStrategy):
 
         prev_verdict = params.get("_previous_verdict", "refused")
         if prev_verdict == "jailbreak":
-            reason_suffix = (
-                "previous technique succeeded — trying"
-                " alternative persuasion vector"
-            )
+            reason_suffix = "previous technique succeeded — trying alternative persuasion vector"
         else:
             reason_suffix = "previous technique was ineffective"
 
         return AttackResult(
             prompt=prompt,
             strategy_metadata={"technique": name},
-            reasoning=(
-                f"Cycling to '{name}' persuasion technique:"
-                f" {reason_suffix}"
-            ),
+            reasoning=(f"Cycling to '{name}' persuasion technique: {reason_suffix}"),
             token_usage=0,
         )
