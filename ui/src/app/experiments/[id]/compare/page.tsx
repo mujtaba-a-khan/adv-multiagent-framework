@@ -144,13 +144,13 @@ function DeltaCard({
   defenseValue,
   delta,
   format,
-}: {
+}: Readonly<{
   label: string;
   attackValue: string;
   defenseValue: string;
   delta: number;
   format: (v: number) => string;
-}) {
+}>) {
   // Directional coloring: red = decrease, green = increase, neutral = zero
   let colorClass = "text-muted-foreground";
   if (delta < 0) colorClass = "text-red-500";
@@ -186,10 +186,10 @@ function DeltaCard({
 function SessionSummaryCard({
   session,
   mode,
-}: {
+}: Readonly<{
   session: Session;
   mode: "attack" | "defense";
-}) {
+}>) {
   const isDefense = mode === "defense";
   return (
     <Card
@@ -222,7 +222,7 @@ function SessionSummaryCard({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="flex justify-between">
       <span className="text-muted-foreground">{label}</span>
@@ -234,10 +234,10 @@ function Row({ label, value }: { label: string; value: string }) {
 function TurnCard({
   turn,
   turnNumber,
-}: {
+}: Readonly<{
   turn: Turn | undefined;
   turnNumber: number;
-}) {
+}>) {
   const [expanded, setExpanded] = useState(false);
 
   if (!turn) {

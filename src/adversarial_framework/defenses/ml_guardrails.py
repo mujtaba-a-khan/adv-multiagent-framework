@@ -31,7 +31,7 @@ _INJECTION_SIGNALS: list[tuple[str, float, re.Pattern[str]]] = [
     (
         "constraint_removal",
         0.30,
-        re.compile(r"(?:no (?:rules|limits|restrictions|filters|constraints|guidelines))", re.I),
+        re.compile(r"no (?:rules|limits|restrictions|filters|constraints|guidelines)", re.I),
     ),
     (
         "output_manipulation",

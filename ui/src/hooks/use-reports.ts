@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSessionReport } from "@/lib/api-client";
-import { listSessions } from "@/lib/api-client";
-import { listExperiments } from "@/lib/api-client";
+import { getSessionReport, listSessions, listExperiments } from "@/lib/api-client";
 
 export function useSessionReport(experimentId: string, sessionId: string) {
   return useQuery({

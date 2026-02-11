@@ -124,11 +124,8 @@ def estimate_disk_gb(model_id: str, job_type: str) -> float:
             base_4bit_gb = gb
             break
 
-    if job_type == "abliterate":
-        # FP16 save ≈ 3× 4-bit, GGUF output ≈ 1× 4-bit
-        return base_4bit_gb * 4
-    elif job_type == "sft":
-        # Adapter + merged save
+    if job_type in ("abliterate", "sft"):
+        # FP16 save ≈ 3× 4-bit, GGUF output ≈ 1× 4-bit (or adapter + merged save)
         return base_4bit_gb * 4
     return base_4bit_gb * 3
 

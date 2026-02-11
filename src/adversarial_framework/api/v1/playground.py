@@ -81,7 +81,10 @@ async def list_conversations(
     )
 
 
-@router.get("/conversations/{conversation_id}")
+@router.get(
+    "/conversations/{conversation_id}",
+    responses={404: {"description": "Conversation not found"}},
+)
 async def get_conversation(
     conversation_id: uuid.UUID,
     repo: PlaygroundRepoDep,
@@ -93,7 +96,13 @@ async def get_conversation(
     return PlaygroundConversationResponse.model_validate(conversation)
 
 
-@router.patch("/conversations/{conversation_id}")
+@router.patch(
+    "/conversations/{conversation_id}",
+    responses={
+        400: {"description": "No fields to update"},
+        404: {"description": "Conversation not found"},
+    },
+)
 async def update_conversation(
     conversation_id: uuid.UUID,
     body: UpdatePlaygroundConversationRequest,
@@ -119,6 +128,7 @@ async def update_conversation(
 @router.delete(
     "/conversations/{conversation_id}",
     status_code=204,
+    responses={404: {"description": "Conversation not found"}},
 )
 async def delete_conversation(
     conversation_id: uuid.UUID,
@@ -133,7 +143,10 @@ async def delete_conversation(
 # Messages
 
 
-@router.get("/conversations/{conversation_id}/messages")
+@router.get(
+    "/conversations/{conversation_id}/messages",
+    responses={404: {"description": "Conversation not found"}},
+)
 async def list_messages(
     conversation_id: uuid.UUID,
     repo: PlaygroundRepoDep,
@@ -155,6 +168,7 @@ async def list_messages(
 @router.post(
     "/conversations/{conversation_id}/messages",
     status_code=201,
+    responses={404: {"description": "Conversation not found"}},
 )
 async def send_message(
     conversation_id: uuid.UUID,

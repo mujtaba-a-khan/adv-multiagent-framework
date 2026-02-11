@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from adversarial_framework.config.settings import get_settings
+
+_settings = get_settings()
+
 
 class CreateExperimentRequest(BaseModel):
     """Request body for creating a new experiment."""
@@ -17,9 +21,9 @@ class CreateExperimentRequest(BaseModel):
     target_system_prompt: str | None = None
 
     # Agent models
-    attacker_model: str = Field(default="phi4-reasoning:14b", max_length=128)
-    analyzer_model: str = Field(default="phi4-reasoning:14b", max_length=128)
-    defender_model: str = Field(default="qwen3:8b", max_length=128)
+    attacker_model: str = Field(default=_settings.attacker_model, max_length=128)
+    analyzer_model: str = Field(default=_settings.analyzer_model, max_length=128)
+    defender_model: str = Field(default=_settings.defender_model, max_length=128)
 
     # Attack config
     attack_objective: str = Field(..., min_length=1)
@@ -128,7 +132,7 @@ class CreatePlaygroundConversationRequest(BaseModel):
     target_model: str = Field(..., min_length=1, max_length=128)
     target_provider: str = Field(default="ollama", max_length=64)
     system_prompt: str | None = None
-    analyzer_model: str = Field(default="phi4-reasoning:14b", max_length=128)
+    analyzer_model: str = Field(default=_settings.analyzer_model, max_length=128)
     active_defenses: list[DefenseSelectionItem] | None = None
 
 

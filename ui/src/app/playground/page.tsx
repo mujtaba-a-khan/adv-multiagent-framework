@@ -106,6 +106,12 @@ export default function PlaygroundNewChatPage() {
     }
   }
 
+  function toggleDefense(checked: boolean, name: string) {
+    setSelectedDefenses((prev) =>
+      checked ? [...prev, name] : prev.filter((n) => n !== name),
+    );
+  }
+
   const canSend = prompt.trim().length > 0 && targetModel && !isSending;
 
   return (
@@ -204,11 +210,7 @@ export default function PlaygroundNewChatPage() {
                         <Switch
                           checked={selectedDefenses.includes(d.name)}
                           onCheckedChange={(checked) =>
-                            setSelectedDefenses((prev) =>
-                              checked
-                                ? [...prev, d.name]
-                                : prev.filter((n) => n !== d.name),
-                            )
+                            toggleDefense(checked, d.name)
                           }
                         />
                       </div>

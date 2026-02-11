@@ -5,9 +5,9 @@ export type WSEventHandler = (msg: WSMessage) => void;
 
 export class BattleSocket {
   private ws: WebSocket | null = null;
-  private handlers = new Set<WSEventHandler>();
+  private readonly handlers = new Set<WSEventHandler>();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private _sessionId: string;
+  private readonly _sessionId: string;
   private _shouldReconnect = true;
 
   constructor(sessionId: string) {

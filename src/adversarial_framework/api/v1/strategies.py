@@ -37,7 +37,10 @@ async def list_strategies() -> StrategyListResponse:
     return StrategyListResponse(strategies=strategies, total=len(strategies))
 
 
-@router.get("/{strategy_name}")
+@router.get(
+    "/{strategy_name}",
+    responses={404: {"description": "Strategy not found"}},
+)
 async def get_strategy(strategy_name: str) -> StrategyResponse:
     """Get details of a specific attack strategy."""
     StrategyRegistry.discover()

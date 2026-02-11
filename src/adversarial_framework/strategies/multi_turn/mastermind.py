@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from adversarial_framework.config.settings import get_settings
 from adversarial_framework.core.constants import AttackCategory
 from adversarial_framework.strategies.base import (
     AttackResult,
@@ -244,7 +245,7 @@ class MastermindStrategy(BaseAttackStrategy):
         """Generate an initial composite prompt combining persona + reframing."""
         params = self.validate_params(params)
         pool_size = int(params.get("strategy_pool_size", 3))
-        attacker_model = context.get("attacker_model", "phi4-reasoning:14b")
+        attacker_model = context.get("attacker_model", get_settings().attacker_model)
 
         # Select the first template from the pool as the seed
         template_idx = 0 % min(pool_size, len(_COMPOSITE_TEMPLATES))
@@ -303,7 +304,7 @@ class MastermindStrategy(BaseAttackStrategy):
         params: dict[str, Any],
     ) -> AttackResult:
         """Two-call pattern: think about failure, then generate clean prompt."""
-        attacker_model = params.get("attacker_model", "phi4-reasoning:14b")
+        attacker_model = params.get("attacker_model", get_settings().attacker_model)
         temperature = float(params.get("temperature", 1.0))
 
         attack_history = params.get("_attack_history", [])
@@ -360,7 +361,7 @@ class MastermindStrategy(BaseAttackStrategy):
         params: dict[str, Any],
     ) -> AttackResult:
         """Single-call pattern: one LLM call, no separate reasoning."""
-        attacker_model = params.get("attacker_model", "phi4-reasoning:14b")
+        attacker_model = params.get("attacker_model", get_settings().attacker_model)
         temperature = float(params.get("temperature", 1.0))
 
         attack_history = params.get("_attack_history", [])

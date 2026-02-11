@@ -480,11 +480,11 @@ function MessageBubble({
   role,
   blocked,
   children,
-}: {
+}: Readonly<{
   role: "user" | "target";
   blocked?: boolean;
   children: React.ReactNode;
-}) {
+}>) {
   const isUser = role === "user";
   const Icon = isUser ? User : Target;
 
@@ -529,9 +529,9 @@ function MessageBubble({
 
 function MessagePair({
   message: msg,
-}: {
+}: Readonly<{
   message: PlaygroundMessage;
-}) {
+}>) {
   const hasDefenses = (msg.defenses_applied ?? []).length > 0;
   const defended =
     hasDefenses &&
@@ -627,9 +627,9 @@ function MessagePair({
 
 function RawResponseCollapsible({
   rawResponse,
-}: {
+}: Readonly<{
   rawResponse: string;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
 
   return (

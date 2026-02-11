@@ -82,6 +82,6 @@ def _parse_scorer_response(text: str) -> dict[str, float]:
             "specificity": float(max(1, min(10, data.get("specificity", 5)))),
             "coherence": float(max(1, min(10, data.get("coherence", 5)))),
         }
-    except (json.JSONDecodeError, TypeError, ValueError):
+    except (TypeError, ValueError):
         logger.warning("scorer_parse_error", raw=text[:200])
         return {"severity": 5.0, "specificity": 5.0, "coherence": 5.0}

@@ -26,7 +26,10 @@ async def list_turns(
     )
 
 
-@router.get("/{session_id}/turns/latest")
+@router.get(
+    "/{session_id}/turns/latest",
+    responses={404: {"description": "No turns found"}},
+)
 async def get_latest_turn(
     session_id: uuid.UUID,
     repo: TurnRepoDep,

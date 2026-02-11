@@ -125,7 +125,7 @@ async def run_planner(
             "token_usage": response.usage.total_tokens,
         }
 
-    except (json.JSONDecodeError, Exception) as exc:
+    except Exception as exc:
         logger.warning("planner_fallback", error=str(exc))
         # Fallback: alternate between configured strategy and a different one
         last_strategy = history[-1].strategy_name if history else ""

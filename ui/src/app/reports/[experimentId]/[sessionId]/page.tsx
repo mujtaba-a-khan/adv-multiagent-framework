@@ -42,9 +42,9 @@ import { exportReportJson } from "@/lib/api-client";
 
 export default function ReportDetailPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ experimentId: string; sessionId: string }>;
-}) {
+}>) {
   const { experimentId, sessionId } = use(params);
   const { data: report, isLoading: reportLoading } = useSessionReport(
     experimentId,

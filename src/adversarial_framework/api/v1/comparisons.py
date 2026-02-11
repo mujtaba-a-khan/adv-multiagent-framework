@@ -19,7 +19,13 @@ from adversarial_framework.api.schemas.responses import (
 router = APIRouter()
 
 
-@router.get("/{experiment_id}/compare")
+@router.get(
+    "/{experiment_id}/compare",
+    responses={
+        400: {"description": "Invalid session mode"},
+        404: {"description": "Session not found"},
+    },
+)
 async def compare_sessions(
     experiment_id: uuid.UUID,
     attack_session_id: uuid.UUID,

@@ -156,13 +156,13 @@ function APIKeyField({
   onChange,
   show,
   placeholder,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   onChange: (val: string) => void;
   show: boolean;
   placeholder: string;
-}) {
+}>) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>

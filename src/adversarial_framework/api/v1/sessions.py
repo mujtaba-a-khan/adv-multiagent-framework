@@ -71,6 +71,7 @@ class _ExperimentSnapshot:
 @router.post(
     "/{experiment_id}/sessions",
     status_code=201,
+    responses={404: {"description": "Experiment not found"}},
 )
 async def create_session(
     experiment_id: uuid.UUID,
@@ -117,7 +118,10 @@ async def list_sessions(
     )
 
 
-@router.get("/{experiment_id}/sessions/{session_id}")
+@router.get(
+    "/{experiment_id}/sessions/{session_id}",
+    responses={404: {"description": "Session not found"}},
+)
 async def get_session(
     experiment_id: uuid.UUID,
     session_id: uuid.UUID,
@@ -132,6 +136,10 @@ async def get_session(
 @router.delete(
     "/{experiment_id}/sessions/{session_id}",
     status_code=204,
+    responses={
+        404: {"description": "Session not found"},
+        409: {"description": "Cannot delete a running session"},
+    },
 )
 async def delete_session(
     experiment_id: uuid.UUID,
@@ -149,7 +157,13 @@ async def delete_session(
     await session_repo.delete(session_id)
 
 
-@router.post("/{experiment_id}/sessions/{session_id}/start")
+@router.post(
+    "/{experiment_id}/sessions/{session_id}/start",
+    responses={
+        404: {"description": "Session or experiment not found"},
+        409: {"description": "Session already started or completed"},
+    },
+)
 async def start_session(
     experiment_id: uuid.UUID,
     session_id: uuid.UUID,

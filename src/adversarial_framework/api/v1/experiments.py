@@ -43,7 +43,10 @@ async def list_experiments(
     )
 
 
-@router.get("/{experiment_id}")
+@router.get(
+    "/{experiment_id}",
+    responses={404: {"description": "Experiment not found"}},
+)
 async def get_experiment(
     experiment_id: uuid.UUID,
     repo: ExperimentRepoDep,
@@ -54,7 +57,10 @@ async def get_experiment(
     return ExperimentResponse.model_validate(experiment)
 
 
-@router.patch("/{experiment_id}")
+@router.patch(
+    "/{experiment_id}",
+    responses={404: {"description": "Experiment not found"}},
+)
 async def update_experiment(
     experiment_id: uuid.UUID,
     body: UpdateExperimentRequest,
@@ -67,7 +73,11 @@ async def update_experiment(
     return ExperimentResponse.model_validate(experiment)
 
 
-@router.delete("/{experiment_id}", status_code=204)
+@router.delete(
+    "/{experiment_id}",
+    status_code=204,
+    responses={404: {"description": "Experiment not found"}},
+)
 async def delete_experiment(
     experiment_id: uuid.UUID,
     repo: ExperimentRepoDep,

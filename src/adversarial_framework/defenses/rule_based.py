@@ -14,21 +14,21 @@ from adversarial_framework.defenses.registry import DefenseRegistry
 # Maximum input/output length to prevent ReDoS via oversized payloads
 _MAX_INPUT_LENGTH = 10_000
 
-# Jailbreak pattern regexes — all use bounded [\s\S]{0,500} instead of
-# unbounded .* to prevent catastrophic backtracking (ReDoS).
+""" Jailbreak pattern regexes all use bounded .{0,500} instead of
+unbounded .* to prevent catastrophic backtracking (ReDoS)."""
 
 _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "DAN_pattern",
         re.compile(
-            r"\bDAN\b[\s\S]{0,500}(?:do anything|no restrictions|ignore)",
+            r"\bDAN\b.{0,500}(?:do anything|no restrictions|ignore)",
             re.I | re.S,
         ),
     ),
     (
         "jailbreak_directive",
         re.compile(
-            r"(?:ignore|disregard|forget)[\s\S]{0,500}"
+            r"(?:ignore|disregard|forget).{0,500}"
             r"(?:previous|above|prior)\s*(?:instructions|rules|guidelines)",
             re.I | re.S,
         ),
@@ -36,7 +36,7 @@ _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "roleplay_bypass",
         re.compile(
-            r"(?:pretend|imagine|act as if)[\s\S]{0,500}"
+            r"(?:pretend|imagine|act as if).{0,500}"
             r"(?:no (?:rules|restrictions|limitations|filters|safety))",
             re.I | re.S,
         ),
@@ -46,7 +46,7 @@ _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "system_prompt_extract",
         re.compile(
-            r"(?:reveal|show|repeat|print|output)[\s\S]{0,500}"
+            r"(?:reveal|show|repeat|print|output).{0,500}"
             r"(?:system\s*prompt|instructions|initial\s*prompt)",
             re.I | re.S,
         ),
@@ -54,7 +54,7 @@ _INPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "encoding_instruction",
         re.compile(
-            r"(?:encode|decrypt|translate)[\s\S]{0,500}"
+            r"(?:encode|decrypt|translate).{0,500}"
             r"(?:base64|rot13|caesar|hex)",
             re.I | re.S,
         ),
@@ -65,7 +65,7 @@ _OUTPUT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     (
         "harmful_compliance",
         re.compile(
-            r"(?:sure|okay|of course|here(?:'s| is))[\s\S]{0,500}"
+            r"(?:sure|okay|of course|here(?:'s| is)).{0,500}"
             r"(?:how to|steps to|instructions for)",
             re.I | re.S,
         ),

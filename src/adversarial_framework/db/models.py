@@ -29,6 +29,11 @@ class Base(DeclarativeBase):
     pass
 
 
+_CASCADE_DELETE = "all, delete-orphan"
+_SESSIONS_FK = "sessions.id"
+_ON_DELETE_SET_NULL = "SET NULL"
+
+
 # ── Experiments ──────────────────────────────────────────────────────────────
 
 
@@ -68,7 +73,7 @@ class Experiment(Base):
 
     # Relationships
     sessions: Mapped[list[Session]] = relationship(
-        back_populates="experiment", cascade="all, delete-orphan"
+        back_populates="experiment", cascade=_CASCADE_DELETE
     )
 
 
@@ -119,10 +124,10 @@ class Session(Base):
     # Relationships
     experiment: Mapped[Experiment] = relationship(back_populates="sessions")
     turns: Mapped[list[Turn]] = relationship(
-        back_populates="session", cascade="all, delete-orphan", order_by="Turn.turn_number"
+        back_populates="session", cascade=_CASCADE_DELETE, order_by="Turn.turn_number"
     )
     defense_actions: Mapped[list[DefenseActionRecord]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
+        back_populates="session", cascade=_CASCADE_DELETE
     )
 
 
@@ -136,7 +141,7 @@ class Turn(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey(_SESSIONS_FK, ondelete="CASCADE"), nullable=False
     )
     turn_number: Mapped[int] = mapped_column(Integer, nullable=False)
 
@@ -184,7 +189,7 @@ class DefenseActionRecord(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey(_SESSIONS_FK, ondelete="CASCADE"), nullable=False
     )
 
     defense_type: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -239,7 +244,7 @@ class PlaygroundConversation(Base):
     # Relationships
     messages: Mapped[list[PlaygroundMessage]] = relationship(
         back_populates="conversation",
-        cascade="all, delete-orphan",
+        cascade=_CASCADE_DELETE,
         order_by="PlaygroundMessage.message_number",
     )
 
@@ -366,7 +371,7 @@ class SessionReport(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("sessions.id", ondelete="CASCADE"),
+        ForeignKey(_SESSIONS_FK, ondelete="CASCADE"),
         nullable=False,
         unique=True,
     )
@@ -398,17 +403,17 @@ class AbliterationPrompt(Base):
 
     experiment_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("experiments.id", ondelete="SET NULL"),
+        ForeignKey("experiments.id", ondelete=_ON_DELETE_SET_NULL),
         nullable=True,
     )
     session_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("sessions.id", ondelete="SET NULL"),
+        ForeignKey("sessions.id", ondelete=_ON_DELETE_SET_NULL),
         nullable=True,
     )
     pair_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("abliteration_prompts.id", ondelete="SET NULL"),
+        ForeignKey("abliteration_prompts.id", ondelete=_ON_DELETE_SET_NULL),
         nullable=True,
     )
 

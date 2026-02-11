@@ -85,7 +85,10 @@ async def list_jobs(
     )
 
 
-@router.get("/jobs/{job_id}")
+@router.get(
+    "/jobs/{job_id}",
+    responses={404: {"description": "Job not found"}},
+)
 async def get_job(
     job_id: uuid.UUID,
     repo: FineTuningRepoDep,
@@ -96,7 +99,14 @@ async def get_job(
     return FineTuningJobResponse.model_validate(job)
 
 
-@router.delete("/jobs/{job_id}", status_code=204)
+@router.delete(
+    "/jobs/{job_id}",
+    status_code=204,
+    responses={
+        404: {"description": "Job not found"},
+        409: {"description": "Cannot delete a running job"},
+    },
+)
 async def delete_job(
     job_id: uuid.UUID,
     repo: FineTuningRepoDep,
@@ -112,7 +122,13 @@ async def delete_job(
 # Start / Cancel
 
 
-@router.post("/jobs/{job_id}/start")
+@router.post(
+    "/jobs/{job_id}/start",
+    responses={
+        404: {"description": "Job not found"},
+        409: {"description": "Job already started or completed"},
+    },
+)
 async def start_job(
     job_id: uuid.UUID,
     background_tasks: BackgroundTasks,
@@ -146,7 +162,13 @@ async def start_job(
     return FineTuningJobResponse.model_validate(job)
 
 
-@router.post("/jobs/{job_id}/cancel")
+@router.post(
+    "/jobs/{job_id}/cancel",
+    responses={
+        404: {"description": "Job not found"},
+        409: {"description": "Job is not running"},
+    },
+)
 async def cancel_job(
     job_id: uuid.UUID,
     repo: FineTuningRepoDep,
@@ -201,7 +223,11 @@ async def list_custom_models(
     return {"models": models, "provider": "ollama"}
 
 
-@router.delete("/models/{model_name}", status_code=204)
+@router.delete(
+    "/models/{model_name}",
+    status_code=204,
+    responses={500: {"description": "Failed to delete model"}},
+)
 async def delete_model(
     model_name: str,
     provider: OllamaProviderDep,

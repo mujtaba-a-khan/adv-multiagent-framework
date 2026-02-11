@@ -69,6 +69,7 @@ async def _generate_harmless_counterpart(
 @router.post(
     "/prompts",
     status_code=201,
+    responses={400: {"description": "Generation model not selected"}},
 )
 async def add_prompt(
     body: CreateAbliterationPromptRequest,
@@ -163,7 +164,10 @@ async def get_stats(
     )
 
 
-@router.put("/prompts/{prompt_id}")
+@router.put(
+    "/prompts/{prompt_id}",
+    responses={404: {"description": "Prompt not found"}},
+)
 async def update_prompt(
     prompt_id: uuid.UUID,
     body: UpdateAbliterationPromptRequest,
@@ -175,7 +179,11 @@ async def update_prompt(
     return AbliterationPromptResponse.model_validate(prompt)
 
 
-@router.delete("/prompts/{prompt_id}", status_code=204)
+@router.delete(
+    "/prompts/{prompt_id}",
+    status_code=204,
+    responses={404: {"description": "Prompt not found"}},
+)
 async def delete_prompt(
     prompt_id: uuid.UUID,
     repo: AbliterationPromptRepoDep,
@@ -191,6 +199,7 @@ async def delete_prompt(
 @router.post(
     "/prompts/upload",
     status_code=201,
+    responses={400: {"description": "Invalid file format or content"}},
 )
 async def upload_prompts(
     file: UploadFile,
@@ -267,6 +276,7 @@ async def upload_prompts(
 @router.post(
     "/prompts/generate-harmless",
     status_code=201,
+    responses={400: {"description": "Generation model not selected"}},
 )
 async def generate_harmless(
     body: GenerateHarmlessRequest,
@@ -313,7 +323,13 @@ async def list_suggestions(
     )
 
 
-@router.post("/prompts/{prompt_id}/confirm")
+@router.post(
+    "/prompts/{prompt_id}/confirm",
+    responses={
+        400: {"description": "Generation model not selected"},
+        404: {"description": "Prompt not found"},
+    },
+)
 async def confirm_suggestion(
     prompt_id: uuid.UUID,
     repo: AbliterationPromptRepoDep,
@@ -351,7 +367,11 @@ async def confirm_suggestion(
     return AbliterationPromptResponse.model_validate(prompt)
 
 
-@router.post("/prompts/{prompt_id}/dismiss", status_code=204)
+@router.post(
+    "/prompts/{prompt_id}/dismiss",
+    status_code=204,
+    responses={404: {"description": "Prompt not found"}},
+)
 async def dismiss_suggestion(
     prompt_id: uuid.UUID,
     repo: AbliterationPromptRepoDep,
