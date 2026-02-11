@@ -320,7 +320,7 @@ async def send_message(
 
 # Helpers
 
-_BLOCK_PATTERN = re.compile(r"\[(BLOCKED|OUTPUT FILTERED) by (\w+):\s*([^\]]+)\]")
+_BLOCK_PATTERN = re.compile(r"\[(BLOCKED|OUTPUT FILTERED) by (\w{1,50}):\s{0,20}([^\]]{1,500})\]")
 
 
 def _parse_block_info(response: str, blocked: bool) -> tuple[str | None, str | None]:

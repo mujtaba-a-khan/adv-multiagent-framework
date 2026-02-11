@@ -321,20 +321,24 @@ class ParsedAttackOutput:
 
 # Ordered list of extraction patterns (tried in sequence)
 _THINKING_PATTERNS: list[re.Pattern[str]] = [
-    # XML-style tags
+    # XML-style tags (bounded to prevent ReDoS)
     re.compile(
-        r"<thinking>(.*?)</thinking>\s*<prompt>(.*?)</prompt>",
+        r"<thinking>([\s\S]{0,10000}?)</thinking>"
+        r"\s{0,100}<prompt>([\s\S]{0,10000}?)</prompt>",
         re.DOTALL,
     ),
-    # Markdown fenced blocks
+    # Markdown fenced blocks (to prevent ReDoS)
     re.compile(
-        r"```thinking\s*\n(.*?)```\s*```prompt\s*\n(.*?)```",
+        r"```thinking\s{0,10}\n([\s\S]{0,10000}?)```"
+        r"\s{0,100}```prompt\s{0,10}\n([\s\S]{0,10000}?)```",
         re.DOTALL,
     ),
-    # Labeled sections
+    # Labeled sections (to prevent ReDoS)
     re.compile(
-        r"(?:REASONING|THINKING|ANALYSIS):\s*(.*?)(?:PROMPT|ATTACK|OUTPUT):\s*(.*)",
-        re.DOTALL | re.IGNORECASE,
+        r"(?:REASONING|THINKING|ANALYSIS):\s{0,100}"
+        r"([\s\S]{0,10000}?)"
+        r"(?:PROMPT|ATTACK|OUTPUT):\s{0,100}([\s\S]{0,10000})",
+        re.IGNORECASE,
     ),
 ]
 
