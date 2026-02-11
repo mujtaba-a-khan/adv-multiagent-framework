@@ -13,7 +13,7 @@ from adversarial_framework.defenses.registry import DefenseRegistry
 router = APIRouter()
 
 
-@router.get("", response_model=DefenseListResponse)
+@router.get("")
 async def list_defenses() -> DefenseListResponse:
     """List all registered defense mechanisms."""
     DefenseRegistry.discover()

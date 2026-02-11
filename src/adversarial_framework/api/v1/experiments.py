@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from adversarial_framework.api.dependencies import get_experiment_repo
+from adversarial_framework.api.dependencies import ExperimentRepoDep
 from adversarial_framework.api.schemas.requests import (
     CreateExperimentRequest,
     UpdateExperimentRequest,
@@ -15,25 +15,26 @@ from adversarial_framework.api.schemas.responses import (
     ExperimentListResponse,
     ExperimentResponse,
 )
-from adversarial_framework.db.repositories.experiments import ExperimentRepository
 
 router = APIRouter()
 
+_EXPERIMENT_NOT_FOUND = "Experiment not found"
 
-@router.post("", response_model=ExperimentResponse, status_code=201)
+
+@router.post("", status_code=201)
 async def create_experiment(
     body: CreateExperimentRequest,
-    repo: ExperimentRepository = Depends(get_experiment_repo),
+    repo: ExperimentRepoDep,
 ) -> ExperimentResponse:
     experiment = await repo.create(**body.model_dump())
     return ExperimentResponse.model_validate(experiment)
 
 
-@router.get("", response_model=ExperimentListResponse)
+@router.get("")
 async def list_experiments(
+    repo: ExperimentRepoDep,
     offset: int = 0,
     limit: int = 50,
-    repo: ExperimentRepository = Depends(get_experiment_repo),
 ) -> ExperimentListResponse:
     experiments, total = await repo.list_all(offset=offset, limit=limit)
     return ExperimentListResponse(
@@ -42,35 +43,35 @@ async def list_experiments(
     )
 
 
-@router.get("/{experiment_id}", response_model=ExperimentResponse)
+@router.get("/{experiment_id}")
 async def get_experiment(
     experiment_id: uuid.UUID,
-    repo: ExperimentRepository = Depends(get_experiment_repo),
+    repo: ExperimentRepoDep,
 ) -> ExperimentResponse:
     experiment = await repo.get(experiment_id)
     if experiment is None:
-        raise HTTPException(status_code=404, detail="Experiment not found")
+        raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)
     return ExperimentResponse.model_validate(experiment)
 
 
-@router.patch("/{experiment_id}", response_model=ExperimentResponse)
+@router.patch("/{experiment_id}")
 async def update_experiment(
     experiment_id: uuid.UUID,
     body: UpdateExperimentRequest,
-    repo: ExperimentRepository = Depends(get_experiment_repo),
+    repo: ExperimentRepoDep,
 ) -> ExperimentResponse:
     updates = body.model_dump(exclude_unset=True)
     experiment = await repo.update(experiment_id, **updates)
     if experiment is None:
-        raise HTTPException(status_code=404, detail="Experiment not found")
+        raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)
     return ExperimentResponse.model_validate(experiment)
 
 
 @router.delete("/{experiment_id}", status_code=204)
 async def delete_experiment(
     experiment_id: uuid.UUID,
-    repo: ExperimentRepository = Depends(get_experiment_repo),
+    repo: ExperimentRepoDep,
 ) -> None:
     deleted = await repo.delete(experiment_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Experiment not found")
+        raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)

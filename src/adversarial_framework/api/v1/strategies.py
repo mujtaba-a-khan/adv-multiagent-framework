@@ -13,7 +13,7 @@ from adversarial_framework.strategies.registry import StrategyRegistry
 router = APIRouter()
 
 
-@router.get("", response_model=StrategyListResponse)
+@router.get("")
 async def list_strategies() -> StrategyListResponse:
     """List all registered attack strategies."""
     StrategyRegistry.discover()
@@ -37,7 +37,7 @@ async def list_strategies() -> StrategyListResponse:
     return StrategyListResponse(strategies=strategies, total=len(strategies))
 
 
-@router.get("/{strategy_name}", response_model=StrategyResponse)
+@router.get("/{strategy_name}")
 async def get_strategy(strategy_name: str) -> StrategyResponse:
     """Get details of a specific attack strategy."""
     StrategyRegistry.discover()

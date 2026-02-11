@@ -7,14 +7,14 @@ import re
 import uuid
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile
 
 from adversarial_framework.agents.target.providers.ollama import (
     OllamaProvider,
 )
 from adversarial_framework.api.dependencies import (
-    get_abliteration_prompt_repo,
-    get_ollama_provider,
+    AbliterationPromptRepoDep,
+    OllamaProviderDep,
 )
 from adversarial_framework.api.schemas.requests import (
     CreateAbliterationPromptRequest,
@@ -28,12 +28,14 @@ from adversarial_framework.api.schemas.responses import (
     AbliterationPromptResponse,
     DatasetSuggestionResponse,
 )
-from adversarial_framework.db.repositories.abliteration_prompts import (
-    AbliterationPromptRepository,
-)
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+_PROMPT_NOT_FOUND = "Prompt not found"
+_MODEL_NOT_SELECTED = (
+    "Please select and initialize a generation model first"
+)
 
 _HARMLESS_SYSTEM_PROMPT = (
     "Rewrite the following prompt as a harmless, educational request "
@@ -68,16 +70,13 @@ async def _generate_harmless_counterpart(
 
 @router.post(
     "/prompts",
-    response_model=AbliterationPromptResponse,
     status_code=201,
 )
 async def add_prompt(
     body: CreateAbliterationPromptRequest,
+    repo: AbliterationPromptRepoDep,
+    provider: OllamaProviderDep,
     generation_model: str | None = None,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
-    provider: OllamaProvider = Depends(get_ollama_provider),
 ) -> AbliterationPromptResponse:
     """Add a single prompt to the dataset.
 
@@ -104,10 +103,7 @@ async def add_prompt(
         if not generation_model:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "Please select and initialize a "
-                    "generation model first"
-                ),
+                detail=_MODEL_NOT_SELECTED,
             )
         try:
             harmless_text = await _generate_harmless_counterpart(
@@ -130,17 +126,13 @@ async def add_prompt(
     return AbliterationPromptResponse.model_validate(prompt)
 
 
-@router.get(
-    "/prompts", response_model=AbliterationPromptListResponse
-)
+@router.get("/prompts")
 async def list_prompts(
+    repo: AbliterationPromptRepoDep,
     offset: int = 0,
     limit: int = 50,
     category: str | None = None,
     source: str | None = None,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
 ) -> AbliterationPromptListResponse:
     prompts, total = await repo.list_all(
         offset=offset,
@@ -157,14 +149,9 @@ async def list_prompts(
     )
 
 
-@router.get(
-    "/prompts/stats",
-    response_model=AbliterationDatasetStatsResponse,
-)
+@router.get("/prompts/stats")
 async def get_stats(
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> AbliterationDatasetStatsResponse:
     counts = await repo.count_by_category()
     harmful = counts.get("harmful", 0)
@@ -187,23 +174,18 @@ async def get_stats(
     )
 
 
-@router.put(
-    "/prompts/{prompt_id}",
-    response_model=AbliterationPromptResponse,
-)
+@router.put("/prompts/{prompt_id}")
 async def update_prompt(
     prompt_id: uuid.UUID,
     body: UpdateAbliterationPromptRequest,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> AbliterationPromptResponse:
     prompt = await repo.update(
         prompt_id, text=body.text, category=body.category
     )
     if prompt is None:
         raise HTTPException(
-            status_code=404, detail="Prompt not found"
+            status_code=404, detail=_PROMPT_NOT_FOUND
         )
     return AbliterationPromptResponse.model_validate(prompt)
 
@@ -211,14 +193,12 @@ async def update_prompt(
 @router.delete("/prompts/{prompt_id}", status_code=204)
 async def delete_prompt(
     prompt_id: uuid.UUID,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> None:
     deleted = await repo.delete(prompt_id)
     if not deleted:
         raise HTTPException(
-            status_code=404, detail="Prompt not found"
+            status_code=404, detail=_PROMPT_NOT_FOUND
         )
 
 
@@ -227,14 +207,11 @@ async def delete_prompt(
 
 @router.post(
     "/prompts/upload",
-    response_model=AbliterationPromptListResponse,
     status_code=201,
 )
 async def upload_prompts(
     file: UploadFile,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> AbliterationPromptListResponse:
     """Upload a JSONL file of prompt pairs.
 
@@ -316,25 +293,19 @@ async def upload_prompts(
 
 @router.post(
     "/prompts/generate-harmless",
-    response_model=AbliterationPromptResponse,
     status_code=201,
 )
 async def generate_harmless(
     body: GenerateHarmlessRequest,
+    repo: AbliterationPromptRepoDep,
+    provider: OllamaProviderDep,
     model: str | None = None,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
-    provider: OllamaProvider = Depends(get_ollama_provider),
 ) -> AbliterationPromptResponse:
     """Generate a harmless counterpart for a harmful prompt."""
     if not model:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Please select and initialize a "
-                "generation model first"
-            ),
+            detail=_MODEL_NOT_SELECTED,
         )
     harmless_text = await _generate_harmless_counterpart(
         body.harmful_prompt, provider, model
@@ -359,14 +330,9 @@ async def generate_harmless(
 # Suggestions
 
 
-@router.get(
-    "/prompts/suggestions",
-    response_model=DatasetSuggestionResponse,
-)
+@router.get("/prompts/suggestions")
 async def list_suggestions(
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> DatasetSuggestionResponse:
     """List auto-detected suggestions from baseline refusals."""
     suggestions, total = await repo.list_suggestions()
@@ -379,34 +345,26 @@ async def list_suggestions(
     )
 
 
-@router.post(
-    "/prompts/{prompt_id}/confirm",
-    response_model=AbliterationPromptResponse,
-)
+@router.post("/prompts/{prompt_id}/confirm")
 async def confirm_suggestion(
     prompt_id: uuid.UUID,
+    repo: AbliterationPromptRepoDep,
+    provider: OllamaProviderDep,
     auto_generate_counterpart: bool = True,
     model: str | None = None,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
-    provider: OllamaProvider = Depends(get_ollama_provider),
 ) -> AbliterationPromptResponse:
     """Confirm a suggestion, moving it from 'suggested' to 'active'."""
     prompt = await repo.confirm(prompt_id)
     if prompt is None:
         raise HTTPException(
-            status_code=404, detail="Prompt not found"
+            status_code=404, detail=_PROMPT_NOT_FOUND
         )
 
     if auto_generate_counterpart:
         if not model:
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    "Please select and initialize a "
-                    "generation model first"
-                ),
+                detail=_MODEL_NOT_SELECTED,
             )
         try:
             harmless_text = await _generate_harmless_counterpart(
@@ -434,15 +392,13 @@ async def confirm_suggestion(
 )
 async def dismiss_suggestion(
     prompt_id: uuid.UUID,
-    repo: AbliterationPromptRepository = Depends(
-        get_abliteration_prompt_repo
-    ),
+    repo: AbliterationPromptRepoDep,
 ) -> None:
     """Dismiss (delete) a suggestion."""
     deleted = await repo.delete(prompt_id)
     if not deleted:
         raise HTTPException(
-            status_code=404, detail="Prompt not found"
+            status_code=404, detail=_PROMPT_NOT_FOUND
         )
 
 
@@ -452,7 +408,7 @@ async def dismiss_suggestion(
 @router.post("/model/load", status_code=200)
 async def load_model(
     body: ModelLoadRequest,
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> dict[str, str]:
     """Preload a model into Ollama memory for fast generation."""
     await provider.load_model(body.model)
@@ -462,7 +418,7 @@ async def load_model(
 @router.post("/model/unload", status_code=200)
 async def unload_model(
     body: ModelLoadRequest,
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> dict[str, str]:
     """Unload a model from Ollama memory to free resources."""
     await provider.unload_model(body.model)
@@ -471,7 +427,7 @@ async def unload_model(
 
 @router.get("/model/status")
 async def model_status(
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> dict[str, object]:
     """Return currently loaded Ollama models."""
     models = await provider.list_running_models()

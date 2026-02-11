@@ -2,18 +2,17 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from adversarial_framework.agents.target.providers.ollama import OllamaProvider
-from adversarial_framework.api.dependencies import get_ollama_provider
+from adversarial_framework.api.dependencies import OllamaProviderDep
 from adversarial_framework.api.schemas.responses import HealthResponse, ModelListResponse
 
 router = APIRouter()
 
 
-@router.get("/models", response_model=ModelListResponse)
+@router.get("/models")
 async def list_models(
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> ModelListResponse:
     """List all available models from the Ollama provider."""
     try:
@@ -23,9 +22,9 @@ async def list_models(
     return ModelListResponse(models=models, provider="ollama")
 
 
-@router.get("/health", response_model=HealthResponse)
+@router.get("/health")
 async def check_target_health(
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> HealthResponse:
     """Check if the Ollama provider is reachable."""
     try:

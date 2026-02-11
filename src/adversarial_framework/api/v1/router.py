@@ -18,9 +18,11 @@ from adversarial_framework.api.v1.ws import router as ws_router
 
 v1_router = APIRouter()
 
-v1_router.include_router(experiments_router, prefix="/experiments", tags=["Experiments"])
-v1_router.include_router(sessions_router, prefix="/experiments", tags=["Sessions"])
-v1_router.include_router(comparisons_router, prefix="/experiments", tags=["Comparisons"])
+_EXPERIMENTS_PREFIX = "/experiments"
+
+v1_router.include_router(experiments_router, prefix=_EXPERIMENTS_PREFIX, tags=["Experiments"])
+v1_router.include_router(sessions_router, prefix=_EXPERIMENTS_PREFIX, tags=["Sessions"])
+v1_router.include_router(comparisons_router, prefix=_EXPERIMENTS_PREFIX, tags=["Comparisons"])
 v1_router.include_router(turns_router, prefix="/sessions", tags=["Turns"])
 v1_router.include_router(strategies_router, prefix="/strategies", tags=["Strategies"])
 v1_router.include_router(defenses_router, prefix="/defenses", tags=["Defenses"])

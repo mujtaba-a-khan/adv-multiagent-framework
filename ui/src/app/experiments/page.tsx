@@ -95,13 +95,14 @@ export default function ExperimentsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
+                {["s1", "s2", "s3", "s4", "s5"].map((id) => (
+                  <Skeleton key={id} className="h-14 w-full" />
                 ))}
               </div>
-            ) : filtered.length === 0 ? (
+            )}
+            {!isLoading && filtered.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <FlaskConical className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-sm font-medium">
@@ -113,7 +114,8 @@ export default function ExperimentsPage() {
                     : "Create your first experiment to get started."}
                 </p>
               </div>
-            ) : (
+            )}
+            {!isLoading && filtered.length > 0 && (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>

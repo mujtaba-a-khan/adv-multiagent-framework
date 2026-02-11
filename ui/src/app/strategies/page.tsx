@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  BookOpen,
   ChevronDown,
   ExternalLink,
   Filter,
@@ -144,20 +143,22 @@ export default function StrategiesPage() {
           </DropdownMenu>
         </div>
 
-        {isLoading ? (
+        {isLoading && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40" />
+            {["s1", "s2", "s3", "s4", "s5", "s6"].map((id) => (
+              <Skeleton key={id} className="h-40" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        )}
+        {!isLoading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Swords className="h-10 w-10 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">
               No strategies match your filters.
             </p>
           </div>
-        ) : (
+        )}
+        {!isLoading && filtered.length > 0 && (
           <div className="space-y-8">
             {Object.entries(grouped).map(([cat, items]) => (
               <section key={cat}>
@@ -186,7 +187,7 @@ export default function StrategiesPage() {
   );
 }
 
-function StrategyDetailCard({ strategy }: { strategy: Strategy }) {
+function StrategyDetailCard({ strategy }: Readonly<{ strategy: Strategy }>) {
   return (
     <Collapsible>
       <Card>
@@ -238,9 +239,9 @@ function StrategyDetailCard({ strategy }: { strategy: Strategy }) {
               <div>
                 <p className="text-xs font-medium mb-1">References</p>
                 <div className="space-y-1">
-                  {strategy.references.map((ref, i) => (
+                  {strategy.references.map((ref) => (
                     <a
-                      key={i}
+                      key={ref}
                       href={ref}
                       target="_blank"
                       rel="noopener noreferrer"

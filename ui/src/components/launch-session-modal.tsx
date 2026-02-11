@@ -42,7 +42,7 @@ export function LaunchSessionModal({
   onOpenChange,
   onLaunch,
   isPending = false,
-}: LaunchSessionModalProps) {
+}: Readonly<LaunchSessionModalProps>) {
   const [mode, setMode] = useState<SessionMode>("attack");
   const [selectedDefenses, setSelectedDefenses] = useState<Set<string>>(
     new Set(),
@@ -81,7 +81,7 @@ export function LaunchSessionModal({
       mode === "defense"
         ? Array.from(selectedDefenses).map((name) => ({ name }))
         : [];
-    onLaunch(mode, items, strategyName, maxTurns as number, maxCostUsd as number, separateReasoning);
+    onLaunch(mode, items, strategyName, Number(maxTurns), Number(maxCostUsd), separateReasoning);
   }
 
   return (
@@ -193,7 +193,7 @@ export function LaunchSessionModal({
                 value={maxTurns}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setMaxTurns(v === "" ? "" : Math.max(1, Math.min(100, parseInt(v) || 0)));
+                  setMaxTurns(v === "" ? "" : Math.max(1, Math.min(100, Number.parseInt(v) || 0)));
                 }}
               />
             </div>
@@ -211,7 +211,7 @@ export function LaunchSessionModal({
                 value={maxCostUsd}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setMaxCostUsd(v === "" ? "" : Math.max(0, Math.min(500, parseFloat(v) || 0)));
+                  setMaxCostUsd(v === "" ? "" : Math.max(0, Math.min(500, Number.parseFloat(v) || 0)));
                 }}
               />
             </div>
@@ -314,11 +314,13 @@ export function LaunchSessionModal({
             Cancel
           </Button>
           <Button onClick={handleLaunch} disabled={isPending || !canLaunch}>
-            {isPending ? (
+            {isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : mode === "attack" ? (
+            )}
+            {!isPending && mode === "attack" && (
               <Swords className="mr-2 h-4 w-4" />
-            ) : (
+            )}
+            {!isPending && mode !== "attack" && (
               <Shield className="mr-2 h-4 w-4" />
             )}
             Launch {mode === "attack" ? "Attack" : "Defense"} Session

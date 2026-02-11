@@ -82,15 +82,17 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                {["s1", "s2", "s3", "s4", "s5"].map((id) => (
+                  <Skeleton key={id} className="h-12 w-full" />
                 ))}
               </div>
-            ) : !sessions || sessions.length === 0 ? (
+            )}
+            {!isLoading && (!sessions || sessions.length === 0) && (
               <EmptyReports />
-            ) : (
+            )}
+            {!isLoading && sessions && sessions.length > 0 && (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -171,12 +173,12 @@ function StatCard({
   value,
   icon,
   valueClass,
-}: {
+}: Readonly<{
   title: string;
   value: string | number | null;
   icon: React.ReactNode;
   valueClass?: string;
-}) {
+}>) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">

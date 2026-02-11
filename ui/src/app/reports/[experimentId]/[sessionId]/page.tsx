@@ -80,8 +80,8 @@ export default function ReportDetailPage({
         <div className="flex flex-1 flex-col gap-6 p-6">
           <Skeleton className="h-8 w-64" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+            {["s1", "s2", "s3", "s4"].map((id) => (
+              <Skeleton key={id} className="h-24 w-full" />
             ))}
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
@@ -263,8 +263,8 @@ export default function ReportDetailPage({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {report.findings.map((f, i) => (
-                    <TableRow key={i}>
+                  {report.findings.map((f) => (
+                    <TableRow key={f.turn_number}>
                       <TableCell className="font-mono">
                         T{f.turn_number}
                       </TableCell>
@@ -306,10 +306,10 @@ export default function ReportDetailPage({
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {report.recommendations.map((rec, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm">
+                {report.recommendations.map((rec, idx) => (
+                  <li key={rec} className="flex items-start gap-3 text-sm">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                      {i + 1}
+                      {idx + 1}
                     </span>
                     <span className="text-muted-foreground">{rec}</span>
                   </li>
@@ -328,12 +328,12 @@ function MetricCard({
   value,
   icon,
   highlight = false,
-}: {
+}: Readonly<{
   label: string;
   value: string | number;
   icon: React.ReactNode;
   highlight?: boolean;
-}) {
+}>) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">

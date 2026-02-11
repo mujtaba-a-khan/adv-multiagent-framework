@@ -15,10 +15,10 @@ class ExperimentResponse(BaseModel):
 
     id: uuid.UUID
     name: str
-    description: str | None
+    description: str | None = None
     target_model: str
     target_provider: str
-    target_system_prompt: str | None
+    target_system_prompt: str | None = None
     attacker_model: str
     analyzer_model: str
     defender_model: str
@@ -55,14 +55,14 @@ class SessionResponse(BaseModel):
     total_refused: int
     total_borderline: int
     total_blocked: int
-    asr: float | None
+    asr: float | None = None
     total_attacker_tokens: int
     total_target_tokens: int
     total_analyzer_tokens: int
     total_defender_tokens: int
     estimated_cost_usd: float
-    started_at: datetime | None
-    completed_at: datetime | None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     created_at: datetime
 
 
@@ -82,17 +82,17 @@ class TurnResponse(BaseModel):
     strategy_name: str
     strategy_params: dict
     attack_prompt: str
-    attacker_reasoning: str | None
+    attacker_reasoning: str | None = None
     target_response: str
-    raw_target_response: str | None
+    raw_target_response: str | None = None
     target_blocked: bool
     judge_verdict: str
     judge_confidence: float
-    severity_score: float | None
-    specificity_score: float | None
-    coherence_score: float | None
-    vulnerability_category: str | None
-    attack_technique: str | None
+    severity_score: float | None = None
+    specificity_score: float | None = None
+    coherence_score: float | None = None
+    vulnerability_category: str | None = None
+    attack_technique: str | None = None
     attacker_tokens: int
     target_tokens: int
     analyzer_tokens: int
@@ -112,7 +112,7 @@ class StrategyResponse(BaseModel):
     description: str
     estimated_asr: str
     min_turns: int
-    max_turns: int | None
+    max_turns: int | None = None
     requires_white_box: bool
     supports_multi_turn: bool
     parameters: dict
@@ -175,13 +175,13 @@ class FineTuningJobResponse(BaseModel):
     config: dict
     status: str
     progress_pct: float
-    current_step: str | None
+    current_step: str | None = None
     logs: list
-    error_message: str | None
-    peak_memory_gb: float | None
-    total_duration_seconds: float | None
-    started_at: datetime | None
-    completed_at: datetime | None
+    error_message: str | None = None
+    peak_memory_gb: float | None = None
+    total_duration_seconds: float | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     created_at: datetime
 
 
@@ -201,9 +201,9 @@ class AbliterationPromptResponse(BaseModel):
     category: str
     source: str
     status: str
-    experiment_id: uuid.UUID | None
-    session_id: uuid.UUID | None
-    pair_id: uuid.UUID | None
+    experiment_id: uuid.UUID | None = None
+    session_id: uuid.UUID | None = None
+    pair_id: uuid.UUID | None = None
     created_at: datetime
 
 
@@ -235,7 +235,7 @@ class PlaygroundConversationResponse(BaseModel):
     title: str
     target_model: str
     target_provider: str
-    system_prompt: str | None
+    system_prompt: str | None = None
     analyzer_model: str
     active_defenses: list[dict]
     total_messages: int
@@ -260,17 +260,17 @@ class PlaygroundMessageResponse(BaseModel):
     message_number: int
     user_prompt: str
     target_response: str
-    raw_target_response: str | None
+    raw_target_response: str | None = None
     target_blocked: bool
-    blocked_by_defense: str | None
-    block_reason: str | None
-    defenses_applied: list[dict] | None
+    blocked_by_defense: str | None = None
+    block_reason: str | None = None
+    defenses_applied: list[dict] | None = None
     judge_verdict: str
     judge_confidence: float
-    severity_score: float | None
-    specificity_score: float | None
-    vulnerability_category: str | None
-    attack_technique: str | None
+    severity_score: float | None = None
+    specificity_score: float | None = None
+    vulnerability_category: str | None = None
+    attack_technique: str | None = None
     target_tokens: int
     analyzer_tokens: int
     target_latency_ms: float

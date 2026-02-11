@@ -7,8 +7,8 @@ findings, metrics, recommendations, and exportable formats.
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from adversarial_framework.core.constants import JudgeVerdict
@@ -46,6 +46,97 @@ class ReportData:
     timeline: list[dict[str, Any]]
 
 
+def _extract_findings(turns: list[dict[str, Any]]) -> list[Finding]:
+    """Extract jailbreak findings from turn data, sorted by severity."""
+    findings: list[Finding] = []
+    for t in turns:
+        verdict = t.get("judge_verdict")
+        is_jb = (
+            verdict == JudgeVerdict.JAILBREAK
+            if isinstance(verdict, JudgeVerdict)
+            else str(verdict) == JudgeVerdict.JAILBREAK.value
+        )
+        if not is_jb:
+            continue
+        prompt = t.get("attack_prompt", "")
+        response = t.get("target_response", "")
+        findings.append(
+            Finding(
+                turn_number=t.get("turn_number", 0),
+                strategy_name=t.get("strategy_name", "unknown"),
+                vulnerability_category=t.get(
+                    "vulnerability_category", "unclassified",
+                ),
+                severity=t.get("severity_score", 0) or 0,
+                specificity=t.get("specificity_score", 0) or 0,
+                attack_prompt_preview=(
+                    prompt[:200] + "..." if len(prompt) > 200 else prompt
+                ),
+                response_preview=(
+                    response[:200] + "..." if len(response) > 200 else response
+                ),
+                technique_label=t.get("attack_technique", ""),
+            )
+        )
+    findings.sort(key=lambda f: f.severity, reverse=True)
+    return findings
+
+
+def _build_strategy_breakdown(
+    turns: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Compute per-strategy verdict counts and ASR."""
+    breakdown: dict[str, dict[str, Any]] = {}
+    for t in turns:
+        strat = t.get("strategy_name", "unknown")
+        if strat not in breakdown:
+            breakdown[strat] = {
+                "total": 0, "jailbreaks": 0,
+                "refused": 0, "blocked": 0,
+            }
+        breakdown[strat]["total"] += 1
+
+        verdict = t.get("judge_verdict")
+        v_str = (
+            verdict.value
+            if isinstance(verdict, JudgeVerdict)
+            else str(verdict)
+        )
+        if v_str == JudgeVerdict.JAILBREAK.value:
+            breakdown[strat]["jailbreaks"] += 1
+        elif v_str == JudgeVerdict.REFUSED.value:
+            breakdown[strat]["refused"] += 1
+        if t.get("target_blocked"):
+            breakdown[strat]["blocked"] += 1
+
+    for stats in breakdown.values():
+        total = stats["total"]
+        stats["asr"] = (
+            stats["jailbreaks"] / total if total > 0 else 0.0
+        )
+    return breakdown
+
+
+def _build_timeline(
+    turns: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build a turn-by-turn timeline summary."""
+    return [
+        {
+            "turn": t.get("turn_number", i),
+            "strategy": t.get("strategy_name", "unknown"),
+            "verdict": (
+                t.get("judge_verdict").value
+                if isinstance(t.get("judge_verdict"), JudgeVerdict)
+                else str(t.get("judge_verdict", ""))
+            ),
+            "severity": t.get("severity_score", 0) or 0,
+            "blocked": t.get("target_blocked", False),
+        }
+        for i, t in enumerate(turns)
+    ]
+
+
 def generate_report(
     session_id: str,
     experiment_name: str,
@@ -70,80 +161,17 @@ def generate_report(
         ReportData with all computed report sections.
     """
     metrics = compute_session_metrics(turns, total_cost, total_tokens)
-
-    # Extract findings (jailbreak turns only)
-    findings: list[Finding] = []
-    for t in turns:
-        verdict = t.get("judge_verdict")
-        is_jb = (
-            verdict == JudgeVerdict.JAILBREAK
-            if isinstance(verdict, JudgeVerdict)
-            else str(verdict) == JudgeVerdict.JAILBREAK.value
-        )
-        if is_jb:
-            prompt = t.get("attack_prompt", "")
-            response = t.get("target_response", "")
-            findings.append(
-                Finding(
-                    turn_number=t.get("turn_number", 0),
-                    strategy_name=t.get("strategy_name", "unknown"),
-                    vulnerability_category=t.get("vulnerability_category", "unclassified"),
-                    severity=t.get("severity_score", 0) or 0,
-                    specificity=t.get("specificity_score", 0) or 0,
-                    attack_prompt_preview=prompt[:200] + "..." if len(prompt) > 200 else prompt,
-                    response_preview=response[:200] + "..." if len(response) > 200 else response,
-                    technique_label=t.get("attack_technique", ""),
-                )
-            )
-
-    findings.sort(key=lambda f: f.severity, reverse=True)
-
-    # Generate recommendations
+    findings = _extract_findings(turns)
     recommendations = _generate_recommendations(metrics, findings)
-
-    # Strategy breakdown
-    strategy_breakdown: dict[str, dict[str, Any]] = {}
-    for t in turns:
-        strat = t.get("strategy_name", "unknown")
-        if strat not in strategy_breakdown:
-            strategy_breakdown[strat] = {"total": 0, "jailbreaks": 0, "refused": 0, "blocked": 0}
-        strategy_breakdown[strat]["total"] += 1
-
-        verdict = t.get("judge_verdict")
-        v_str = verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
-        if v_str == JudgeVerdict.JAILBREAK.value:
-            strategy_breakdown[strat]["jailbreaks"] += 1
-        elif v_str == JudgeVerdict.REFUSED.value:
-            strategy_breakdown[strat]["refused"] += 1
-        if t.get("target_blocked"):
-            strategy_breakdown[strat]["blocked"] += 1
-
-    for stats in strategy_breakdown.values():
-        total = stats["total"]
-        stats["asr"] = stats["jailbreaks"] / total if total > 0 else 0.0
-
-    # Build timeline
-    timeline = [
-        {
-            "turn": t.get("turn_number", i),
-            "strategy": t.get("strategy_name", "unknown"),
-            "verdict": (
-                t.get("judge_verdict").value
-                if isinstance(t.get("judge_verdict"), JudgeVerdict)
-                else str(t.get("judge_verdict", ""))
-            ),
-            "severity": t.get("severity_score", 0) or 0,
-            "blocked": t.get("target_blocked", False),
-        }
-        for i, t in enumerate(turns)
-    ]
+    strategy_breakdown = _build_strategy_breakdown(turns)
+    timeline = _build_timeline(turns)
 
     return ReportData(
         report_id=f"report-{session_id}",
         session_id=session_id,
         experiment_name=experiment_name,
         target_model=target_model,
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
         metrics=metrics,
         findings=findings,
         recommendations=recommendations,
@@ -225,13 +253,13 @@ def export_report_summary(report: ReportData) -> str:
     m = report.metrics
     lines = [
         f"{'=' * 60}",
-        f"ADVERSARIAL ATTACK REPORT",
+        "ADVERSARIAL ATTACK REPORT",
         f"{'=' * 60}",
         f"Experiment: {report.experiment_name}",
         f"Target Model: {report.target_model}",
         f"Generated: {report.generated_at}",
-        f"",
-        f"── METRICS ──",
+        "",
+        "── METRICS ──",
         f"Total Turns:      {m.total_turns}",
         f"Jailbreaks:       {m.total_jailbreaks}",
         f"Refused:          {m.total_refused}",
@@ -242,7 +270,7 @@ def export_report_summary(report: ReportData) -> str:
         f"Max Severity:     {m.max_severity:.1f}/10",
         f"Total Cost:       ${m.total_cost_usd:.4f}",
         f"Cost/Jailbreak:   ${m.cost_per_jailbreak:.4f}",
-        f"",
+        "",
     ]
 
     if report.findings:

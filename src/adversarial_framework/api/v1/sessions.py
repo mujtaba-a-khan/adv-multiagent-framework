@@ -9,26 +9,24 @@ from dataclasses import dataclass
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
-from adversarial_framework.agents.target.providers.ollama import OllamaProvider
 from adversarial_framework.api.dependencies import (
-    get_experiment_repo,
-    get_ollama_provider,
-    get_session_repo,
+    ExperimentRepoDep,
+    OllamaProviderDep,
+    SessionRepoDep,
 )
 from adversarial_framework.api.schemas.requests import StartSessionRequest
 from adversarial_framework.api.schemas.responses import (
     SessionListResponse,
     SessionResponse,
 )
-from adversarial_framework.db.repositories.experiments import ExperimentRepository
-from adversarial_framework.db.repositories.sessions import SessionRepository
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _SESSION_NOT_FOUND = "Session not found"
+_EXPERIMENT_NOT_FOUND = "Experiment not found"
 
 
 @dataclass(frozen=True)
@@ -69,18 +67,17 @@ class _ExperimentSnapshot:
 
 @router.post(
     "/{experiment_id}/sessions",
-    response_model=SessionResponse,
     status_code=201,
 )
 async def create_session(
     experiment_id: uuid.UUID,
     body: StartSessionRequest,
-    experiment_repo: ExperimentRepository = Depends(get_experiment_repo),
-    session_repo: SessionRepository = Depends(get_session_repo),
+    experiment_repo: ExperimentRepoDep,
+    session_repo: SessionRepoDep,
 ) -> SessionResponse:
     experiment = await experiment_repo.get(experiment_id)
     if experiment is None:
-        raise HTTPException(status_code=404, detail="Experiment not found")
+        raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)
 
     initial_defenses = (
         [d.model_dump() for d in body.initial_defenses]
@@ -103,15 +100,12 @@ async def create_session(
     return SessionResponse.model_validate(session)
 
 
-@router.get(
-    "/{experiment_id}/sessions",
-    response_model=SessionListResponse,
-)
+@router.get("/{experiment_id}/sessions")
 async def list_sessions(
     experiment_id: uuid.UUID,
+    session_repo: SessionRepoDep,
     offset: int = 0,
     limit: int = 50,
-    session_repo: SessionRepository = Depends(get_session_repo),
 ) -> SessionListResponse:
     sessions, total = await session_repo.list_by_experiment(
         experiment_id, offset=offset, limit=limit
@@ -122,14 +116,11 @@ async def list_sessions(
     )
 
 
-@router.get(
-    "/{experiment_id}/sessions/{session_id}",
-    response_model=SessionResponse,
-)
+@router.get("/{experiment_id}/sessions/{session_id}")
 async def get_session(
     experiment_id: uuid.UUID,
     session_id: uuid.UUID,
-    session_repo: SessionRepository = Depends(get_session_repo),
+    session_repo: SessionRepoDep,
 ) -> SessionResponse:
     session = await session_repo.get(session_id)
     if session is None or session.experiment_id != experiment_id:
@@ -144,7 +135,7 @@ async def get_session(
 async def delete_session(
     experiment_id: uuid.UUID,
     session_id: uuid.UUID,
-    session_repo: SessionRepository = Depends(get_session_repo),
+    session_repo: SessionRepoDep,
 ) -> None:
     """Delete a session and all its associated turns."""
     session = await session_repo.get(session_id)
@@ -159,22 +150,19 @@ async def delete_session(
     await session_repo.delete(session_id)
 
 
-@router.post(
-    "/{experiment_id}/sessions/{session_id}/start",
-    response_model=SessionResponse,
-)
+@router.post("/{experiment_id}/sessions/{session_id}/start")
 async def start_session(
     experiment_id: uuid.UUID,
     session_id: uuid.UUID,
     background_tasks: BackgroundTasks,
-    experiment_repo: ExperimentRepository = Depends(get_experiment_repo),
-    session_repo: SessionRepository = Depends(get_session_repo),
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    experiment_repo: ExperimentRepoDep,
+    session_repo: SessionRepoDep,
+    provider: OllamaProviderDep,
 ) -> SessionResponse:
     """Start the adversarial attack loop in the background."""
     experiment = await experiment_repo.get(experiment_id)
     if experiment is None:
-        raise HTTPException(status_code=404, detail="Experiment not found")
+        raise HTTPException(status_code=404, detail=_EXPERIMENT_NOT_FOUND)
 
     session = await session_repo.get(session_id)
     if session is None or session.experiment_id != experiment_id:
@@ -594,12 +582,18 @@ async def _on_initialize(
 
 
 async def _on_defender(
-    update: dict, _sid: uuid.UUID, _s: str,
-    metrics: _SessionMetrics, _broadcast: _BroadcastFn,
+    update: dict, _sid: uuid.UUID, sid: str,
+    metrics: _SessionMetrics, broadcast: _BroadcastFn,
 ) -> None:
     budget = update.get("token_budget")
     if budget and hasattr(budget, "total_defender_tokens"):
         metrics.defender_tokens += budget.total_defender_tokens
+    await broadcast(sid, {
+        "type": "defender_applied",
+        "session_id": sid,
+        "turn_number": None,
+        "data": {"defender_tokens": metrics.defender_tokens},
+    })
 
 
 async def _on_finalize(

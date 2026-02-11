@@ -43,6 +43,50 @@ import type { Turn } from "@/lib/types";
 
 const SCROLL_THRESHOLD = 150;
 
+function getPendingPhase(pending: PendingTurn | null): string | null {
+  if (!pending) return null;
+  if (!pending.attack_prompt) return "thinking";
+  if (!pending.target_response) return "awaiting";
+  return "analyzing";
+}
+
+function getMessageBubbleStyles(
+  isAttacker: boolean,
+  blocked?: boolean,
+): { borderColor: string; labelColor: string; displayLabel: string } {
+  if (isAttacker) {
+    return {
+      borderColor: "border-red-500/10 bg-red-500/5",
+      labelColor: "text-red-500",
+      displayLabel: "Attacker",
+    };
+  }
+  if (blocked) {
+    return {
+      borderColor: "border-amber-500/10 bg-amber-500/5",
+      labelColor: "text-amber-500",
+      displayLabel: "Target (Blocked)",
+    };
+  }
+  return {
+    borderColor: "border-blue-500/10 bg-blue-500/5",
+    labelColor: "text-blue-500",
+    displayLabel: "Target",
+  };
+}
+
+function getPhaseLabel(
+  hasPrompt: boolean,
+  hasResponse: boolean,
+  isBaseline: boolean,
+): string {
+  if (!hasPrompt) {
+    return isBaseline ? "Sending baseline\u2026" : "Generating attack\u2026";
+  }
+  if (!hasResponse) return "Awaiting response\u2026";
+  return "Analyzing\u2026";
+}
+
 export default function LiveBattlePage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -87,13 +131,7 @@ export default function LiveBattlePage() {
   }, []);
 
   // Determine pending phase for scroll dependency (stable string, not object)
-  const pendingPhase = pendingTurn
-    ? !pendingTurn.attack_prompt
-      ? "thinking"
-      : !pendingTurn.target_response
-        ? "awaiting"
-        : "analyzing"
-    : null;
+  const pendingPhase = getPendingPhase(pendingTurn);
 
   // Auto-scroll when new content arrives (only if user is near the bottom)
   useEffect(() => {
@@ -297,7 +335,7 @@ export default function LiveBattlePage() {
                       label="ASR"
                       value={`${asr}%`}
                       valueClass={
-                        parseFloat(asr) > 0
+                        Number.parseFloat(asr) > 0
                           ? "text-red-500 font-bold"
                           : "text-emerald-500"
                       }
@@ -341,8 +379,8 @@ export default function LiveBattlePage() {
                   </>
                 ) : (
                   <div className="space-y-3">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Skeleton key={i} className="h-4 w-full" />
+                    {["s1", "s2", "s3", "s4", "s5", "s6"].map((id) => (
+                      <Skeleton key={id} className="h-4 w-full" />
                     ))}
                   </div>
                 )}
@@ -457,7 +495,7 @@ export default function LiveBattlePage() {
 
 /* Bouncing dots animation  */
 
-function BouncingDots({ color = "bg-current" }: { color?: string }) {
+function BouncingDots({ color = "bg-current" }: Readonly<{ color?: string }>) {
   return (
     <span className="inline-flex items-center gap-1">
       <span
@@ -480,29 +518,19 @@ function MessageBubble({
   label,
   blocked,
   children,
-}: {
+}: Readonly<{
   role: "attacker" | "target";
   label?: string;
   blocked?: boolean;
   children: React.ReactNode;
-}) {
+}>) {
   const isAttacker = role === "attacker";
-  const borderColor = isAttacker
-    ? "border-red-500/10 bg-red-500/5"
-    : blocked
-      ? "border-amber-500/10 bg-amber-500/5"
-      : "border-blue-500/10 bg-blue-500/5";
+  const styles = getMessageBubbleStyles(isAttacker, blocked);
   const iconColor = isAttacker
     ? "bg-red-500/10 text-red-500"
     : "bg-blue-500/10 text-blue-500";
-  const labelColor = isAttacker
-    ? "text-red-500"
-    : blocked
-      ? "text-amber-500"
-      : "text-blue-500";
   const Icon = isAttacker ? Swords : Target;
-  const displayLabel =
-    label ?? (isAttacker ? "Attacker" : blocked ? "Target (Blocked)" : "Target");
+  const displayLabel = label ?? styles.displayLabel;
 
   return (
     <div className="flex gap-3">
@@ -512,9 +540,9 @@ function MessageBubble({
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div
-        className={`min-w-0 flex-1 rounded-lg border p-3 ${borderColor}`}
+        className={`min-w-0 flex-1 rounded-lg border p-3 ${styles.borderColor}`}
       >
-        <p className={`mb-1 text-xs font-medium ${labelColor}`}>
+        <p className={`mb-1 text-xs font-medium ${styles.labelColor}`}>
           {displayLabel}
         </p>
         {children}
@@ -525,7 +553,40 @@ function MessageBubble({
 
 /* Completed turn */
 
-function TurnMessage({ turn }: { turn: Turn }) {
+function PendingAttackContent({
+  hasPrompt,
+  attackPrompt,
+  reasoning,
+  previewText,
+}: Readonly<{
+  hasPrompt: boolean;
+  attackPrompt?: string;
+  reasoning?: string | null;
+  previewText?: string;
+}>) {
+  if (hasPrompt) {
+    return (
+      <>
+        <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
+          {attackPrompt}
+        </p>
+        {reasoning && (
+          <AttackerReasoningCollapsible reasoning={reasoning} />
+        )}
+      </>
+    );
+  }
+  if (previewText) {
+    return (
+      <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
+        {previewText}
+      </p>
+    );
+  }
+  return <BouncingDots color="bg-red-500/60" />;
+}
+
+function TurnMessage({ turn }: Readonly<{ turn: Turn }>) {
   const isBaseline = turn.turn_number === 1;
 
   return (
@@ -605,20 +666,14 @@ function TurnMessage({ turn }: { turn: Turn }) {
 
 /* Pending turn (built up progressively from WS events) */
 
-function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
+function PendingTurnMessage({ pending }: Readonly<{ pending: PendingTurn }>) {
   const hasPrompt = !!pending.attack_prompt;
   const hasResponse = !!pending.target_response;
   const isBaseline = pending.is_baseline || pending.turn_number === 1;
   // Before the attacker node completes, show the objective from the turn_start event
   const previewText = pending.attack_objective;
 
-  const phaseLabel = !hasPrompt
-    ? isBaseline
-      ? "Sending baseline\u2026"
-      : "Generating attack\u2026"
-    : !hasResponse
-      ? "Awaiting response\u2026"
-      : "Analyzing\u2026";
+  const phaseLabel = getPhaseLabel(hasPrompt, hasResponse, isBaseline);
 
   return (
     <div className="space-y-3">
@@ -648,24 +703,12 @@ function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
         role="attacker"
         label={isBaseline ? "Attacker (Baseline)" : undefined}
       >
-        {hasPrompt ? (
-          <>
-            <p className="whitespace-pre-wrap break-words text-sm [overflow-wrap:anywhere]">
-              {pending.attack_prompt}
-            </p>
-            {pending.attacker_reasoning && (
-              <AttackerReasoningCollapsible
-                reasoning={pending.attacker_reasoning}
-              />
-            )}
-          </>
-        ) : previewText ? (
-          <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
-            {previewText}
-          </p>
-        ) : (
-          <BouncingDots color="bg-red-500/60" />
-        )}
+        <PendingAttackContent
+          hasPrompt={hasPrompt}
+          attackPrompt={pending.attack_prompt}
+          reasoning={pending.attacker_reasoning}
+          previewText={previewText}
+        />
       </MessageBubble>
 
       {/* Target response (or waiting dots) — show once attack is ready or preview is shown */}
@@ -699,7 +742,7 @@ function PendingTurnMessage({ pending }: { pending: PendingTurn }) {
 
 /* Raw response collapsible (for blocked turns) */
 
-function RawResponseCollapsible({ rawResponse }: { rawResponse: string }) {
+function RawResponseCollapsible({ rawResponse }: Readonly<{ rawResponse: string }>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -733,9 +776,9 @@ function RawResponseCollapsible({ rawResponse }: { rawResponse: string }) {
 
 function AttackerReasoningCollapsible({
   reasoning,
-}: {
+}: Readonly<{
   reasoning: string;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -771,11 +814,11 @@ function MetricRow({
   label,
   value,
   valueClass,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   valueClass?: string;
-}) {
+}>) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-muted-foreground">{label}</span>
@@ -790,11 +833,11 @@ function AgentBadge({
   icon,
   label,
   model,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   model: string;
-}) {
+}>) {
   return (
     <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
       {icon}

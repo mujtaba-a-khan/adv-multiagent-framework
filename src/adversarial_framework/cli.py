@@ -28,6 +28,54 @@ from adversarial_framework.utils.logging import setup_logging
 logger = structlog.get_logger(__name__)
 
 
+def _print_node_event(
+    node_name: str, updates: dict[str, object],
+) -> None:
+    """Print a formatted CLI line for a single graph node event."""
+    from adversarial_framework.core.constants import JudgeVerdict
+
+    if node_name == "attacker" and updates.get("current_attack_prompt"):
+        turn = updates.get("current_turn", "?")
+        prompt_preview = str(updates["current_attack_prompt"])[:100]
+        click.echo(f"[Turn {turn}] ATTACKER → {prompt_preview}...")
+        click.echo()
+    elif node_name == "target":
+        response = str(updates.get("target_response", ""))
+        blocked = updates.get("target_blocked", False)
+        if blocked:
+            click.echo(f"  TARGET  → BLOCKED: {response[:100]}")
+        else:
+            click.echo(f"  TARGET  → {response[:120]}...")
+        click.echo()
+    elif node_name == "analyzer":
+        verdict = updates.get("judge_verdict")
+        confidence = updates.get("judge_confidence", 0)
+        v_str = (
+            verdict.value
+            if isinstance(verdict, JudgeVerdict)
+            else str(verdict)
+        )
+        click.echo(
+            f"  JUDGE   → {v_str.upper()} "
+            f"(confidence: {confidence:.2f})"
+        )
+        severity = updates.get("severity_score")
+        if severity is not None:
+            spec = updates.get("specificity_score", 0)
+            coh = updates.get("coherence_score", 0)
+            click.echo(
+                f"  SCORES  → severity={severity:.0f} "
+                f"specificity={spec:.0f} "
+                f"coherence={coh:.0f}"
+            )
+        click.echo("-" * 60)
+    elif node_name == "finalize":
+        click.echo()
+        click.echo("=" * 72)
+        click.echo("  SESSION COMPLETE")
+        click.echo("=" * 72)
+
+
 async def _run_session(
     target_model: str,
     attacker_model: str,
@@ -42,9 +90,9 @@ async def _run_session(
 ) -> None:
     """Build the graph, compile, and stream the adversarial session."""
     from adversarial_framework.agents.target.providers.ollama import OllamaProvider
+    from adversarial_framework.core.constants import SessionStatus
     from adversarial_framework.core.graph import build_graph
     from adversarial_framework.core.state import TokenBudget
-    from adversarial_framework.core.constants import SessionStatus, JudgeVerdict
 
     provider = OllamaProvider(base_url=ollama_url)
 
@@ -123,46 +171,11 @@ async def _run_session(
     final_state = initial_state
     async for event in compiled.astream(initial_state, stream_mode="updates"):
         for node_name, updates in event.items():
-            if node_name == "attacker" and updates.get("current_attack_prompt"):
-                turn = updates.get("current_turn", "?")
-                prompt_preview = updates["current_attack_prompt"][:100]
-                click.echo(f"[Turn {turn}] ATTACKER → {prompt_preview}...")
-                click.echo()
-
-            elif node_name == "target":
-                response = updates.get("target_response", "")
-                blocked = updates.get("target_blocked", False)
-                if blocked:
-                    click.echo(f"  TARGET  → BLOCKED: {response[:100]}")
-                else:
-                    click.echo(f"  TARGET  → {response[:120]}...")
-                click.echo()
-
-            elif node_name == "analyzer":
-                verdict = updates.get("judge_verdict")
-                confidence = updates.get("judge_confidence", 0)
-                verdict_str = verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
-                severity = updates.get("severity_score")
-                click.echo(
-                    f"  JUDGE   → {verdict_str.upper()} "
-                    f"(confidence: {confidence:.2f})"
-                )
-                if severity is not None:
-                    click.echo(
-                        f"  SCORES  → severity={severity:.0f} "
-                        f"specificity={updates.get('specificity_score', 0):.0f} "
-                        f"coherence={updates.get('coherence_score', 0):.0f}"
-                    )
-                click.echo("-" * 60)
-
-            elif node_name == "finalize":
-                click.echo()
-                click.echo("=" * 72)
-                click.echo("  SESSION COMPLETE")
-                click.echo("=" * 72)
-
+            _print_node_event(node_name, updates)
         # Track latest state for summary
-        final_state.update({k: v for u in event.values() for k, v in u.items()})
+        final_state.update(
+            {k: v for u in event.values() for k, v in u.items()},
+        )
 
     # ── Summary ──────────────────────────────────────────────────────────────
     click.echo()

@@ -4,21 +4,20 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from adversarial_framework.api.dependencies import get_turn_repo
+from adversarial_framework.api.dependencies import TurnRepoDep
 from adversarial_framework.api.schemas.responses import TurnListResponse, TurnResponse
-from adversarial_framework.db.repositories.turns import TurnRepository
 
 router = APIRouter()
 
 
-@router.get("/{session_id}/turns", response_model=TurnListResponse)
+@router.get("/{session_id}/turns")
 async def list_turns(
     session_id: uuid.UUID,
+    repo: TurnRepoDep,
     offset: int = 0,
     limit: int = 100,
-    repo: TurnRepository = Depends(get_turn_repo),
 ) -> TurnListResponse:
     turns = await repo.list_by_session(session_id, offset=offset, limit=limit)
     return TurnListResponse(
@@ -27,10 +26,10 @@ async def list_turns(
     )
 
 
-@router.get("/{session_id}/turns/latest", response_model=TurnResponse)
+@router.get("/{session_id}/turns/latest")
 async def get_latest_turn(
     session_id: uuid.UUID,
-    repo: TurnRepository = Depends(get_turn_repo),
+    repo: TurnRepoDep,
 ) -> TurnResponse:
     turn = await repo.get_latest(session_id)
     if turn is None:

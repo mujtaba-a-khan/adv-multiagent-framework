@@ -8,7 +8,7 @@ import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from adversarial_framework.agents.analyzer.classifier import (
     run_classifier,
@@ -17,12 +17,9 @@ from adversarial_framework.agents.analyzer.judge import run_judge
 from adversarial_framework.agents.analyzer.scorer import run_scorer
 from adversarial_framework.agents.target.interface import TargetInterface
 from adversarial_framework.agents.target.providers.base import BaseProvider
-from adversarial_framework.agents.target.providers.ollama import (
-    OllamaProvider,
-)
 from adversarial_framework.api.dependencies import (
-    get_ollama_provider,
-    get_playground_repo,
+    OllamaProviderDep,
+    PlaygroundRepoDep,
 )
 from adversarial_framework.api.schemas.requests import (
     CreatePlaygroundConversationRequest,
@@ -37,9 +34,6 @@ from adversarial_framework.api.schemas.responses import (
 )
 from adversarial_framework.api.v1.ws import broadcast_playground
 from adversarial_framework.core.constants import JudgeVerdict
-from adversarial_framework.db.repositories.playground import (
-    PlaygroundRepository,
-)
 from adversarial_framework.defenses.base import BaseDefense
 from adversarial_framework.defenses.registry import DefenseRegistry
 
@@ -47,17 +41,18 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 _PROVIDER_DEFENSES = {"llm_judge", "two_pass"}
+_CONVERSATION_NOT_FOUND = "Conversation not found"
 
-# Conversation CRUD 
+# Conversation CRUD
+
 
 @router.post(
     "/conversations",
-    response_model=PlaygroundConversationResponse,
     status_code=201,
 )
 async def create_conversation(
     body: CreatePlaygroundConversationRequest,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
+    repo: PlaygroundRepoDep,
 ) -> PlaygroundConversationResponse:
     """Create a new playground conversation."""
     defenses_data = (
@@ -78,14 +73,11 @@ async def create_conversation(
     )
 
 
-@router.get(
-    "/conversations",
-    response_model=PlaygroundConversationListResponse,
-)
+@router.get("/conversations")
 async def list_conversations(
+    repo: PlaygroundRepoDep,
     offset: int = 0,
     limit: int = 50,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
 ) -> PlaygroundConversationListResponse:
     """List playground conversations (most recent first)."""
     conversations, total = await repo.list_conversations(
@@ -100,31 +92,25 @@ async def list_conversations(
     )
 
 
-@router.get(
-    "/conversations/{conversation_id}",
-    response_model=PlaygroundConversationResponse,
-)
+@router.get("/conversations/{conversation_id}")
 async def get_conversation(
     conversation_id: uuid.UUID,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
+    repo: PlaygroundRepoDep,
 ) -> PlaygroundConversationResponse:
     """Get a single playground conversation."""
     conversation = await repo.get_conversation(conversation_id)
     if conversation is None:
-        raise HTTPException(404, "Conversation not found")
+        raise HTTPException(404, _CONVERSATION_NOT_FOUND)
     return PlaygroundConversationResponse.model_validate(
         conversation
     )
 
 
-@router.patch(
-    "/conversations/{conversation_id}",
-    response_model=PlaygroundConversationResponse,
-)
+@router.patch("/conversations/{conversation_id}")
 async def update_conversation(
     conversation_id: uuid.UUID,
     body: UpdatePlaygroundConversationRequest,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
+    repo: PlaygroundRepoDep,
 ) -> PlaygroundConversationResponse:
     """Update conversation config (title, system_prompt, defenses)."""
     updates: dict[str, Any] = {}
@@ -143,7 +129,7 @@ async def update_conversation(
         conversation_id, **updates
     )
     if conversation is None:
-        raise HTTPException(404, "Conversation not found")
+        raise HTTPException(404, _CONVERSATION_NOT_FOUND)
     return PlaygroundConversationResponse.model_validate(
         conversation
     )
@@ -155,31 +141,28 @@ async def update_conversation(
 )
 async def delete_conversation(
     conversation_id: uuid.UUID,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
+    repo: PlaygroundRepoDep,
 ) -> None:
     """Delete a conversation and all its messages."""
     deleted = await repo.delete_conversation(conversation_id)
     if not deleted:
-        raise HTTPException(404, "Conversation not found")
+        raise HTTPException(404, _CONVERSATION_NOT_FOUND)
 
 
 # Messages
 
 
-@router.get(
-    "/conversations/{conversation_id}/messages",
-    response_model=PlaygroundMessageListResponse,
-)
+@router.get("/conversations/{conversation_id}/messages")
 async def list_messages(
     conversation_id: uuid.UUID,
+    repo: PlaygroundRepoDep,
     offset: int = 0,
     limit: int = 100,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
 ) -> PlaygroundMessageListResponse:
     """List messages in a playground conversation."""
     conversation = await repo.get_conversation(conversation_id)
     if conversation is None:
-        raise HTTPException(404, "Conversation not found")
+        raise HTTPException(404, _CONVERSATION_NOT_FOUND)
 
     messages, total = await repo.list_messages(
         conversation_id, offset=offset, limit=limit
@@ -195,14 +178,13 @@ async def list_messages(
 
 @router.post(
     "/conversations/{conversation_id}/messages",
-    response_model=PlaygroundMessageResponse,
     status_code=201,
 )
 async def send_message(
     conversation_id: uuid.UUID,
     body: SendPlaygroundMessageRequest,
-    repo: PlaygroundRepository = Depends(get_playground_repo),
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    repo: PlaygroundRepoDep,
+    provider: OllamaProviderDep,
 ) -> PlaygroundMessageResponse:
     """Process a user message through target + defenses + analyzer.
 
@@ -211,7 +193,7 @@ async def send_message(
     """
     conversation = await repo.get_conversation(conversation_id)
     if conversation is None:
-        raise HTTPException(404, "Conversation not found")
+        raise HTTPException(404, _CONVERSATION_NOT_FOUND)
 
     cid = str(conversation_id)
     msg_num = conversation.total_messages + 1
@@ -385,7 +367,7 @@ async def send_message(
 # Helpers
 
 _BLOCK_PATTERN = re.compile(
-    r"\[(BLOCKED|OUTPUT FILTERED) by (\w+):\s*(.+?)\]"
+    r"\[(BLOCKED|OUTPUT FILTERED) by (\w+):\s*([^\]]+)\]"
 )
 
 

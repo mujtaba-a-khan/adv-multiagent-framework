@@ -126,7 +126,7 @@ async def _convert_hf_to_gguf(
         output=str(gguf_path),
     )
 
-    code, out, err = await _run_converter(
+    code, _, err = await _run_converter(
         converter, model_dir, gguf_path,
     )
 
@@ -138,7 +138,7 @@ async def _convert_hf_to_gguf(
             "converter_stale_redownloading", error=err[:200],
         )
         converter = await _ensure_gguf_converter(force=True)
-        code, out, err = await _run_converter(
+        code, _, err = await _run_converter(
             converter, model_dir, gguf_path,
         )
 
@@ -305,6 +305,35 @@ async def import_to_ollama(
     )
 
 
+# Disk management helpers
+
+def _sum_blob_sizes(blobs_dir: Path) -> int:
+    """Sum file sizes of all blobs in the directory."""
+    total = 0
+    for name in os.listdir(blobs_dir):
+        try:
+            total += (blobs_dir / name).stat().st_size
+        except OSError:
+            continue
+    return total
+
+
+def _find_orphan_stats(
+    blobs_dir: Path, referenced: set[str],
+) -> tuple[int, int]:
+    """Count orphan blobs and their total size in bytes."""
+    count = 0
+    size = 0
+    for name in os.listdir(blobs_dir):
+        if name.replace("-", ":") not in referenced:
+            try:
+                size += (blobs_dir / name).stat().st_size
+                count += 1
+            except OSError:
+                continue
+    return count, size
+
+
 # ── Disk management (user-triggered via API) ─────────────────────
 
 
@@ -326,32 +355,18 @@ def get_disk_status() -> dict:
         disk_free_gb = 0.0
 
     # Ollama storage total
-    ollama_total_bytes = 0
-    if blobs_dir.exists():
-        for name in os.listdir(blobs_dir):
-            try:
-                ollama_total_bytes += (
-                    (blobs_dir / name).stat().st_size
-                )
-            except OSError:
-                continue
+    ollama_total_bytes = (
+        _sum_blob_sizes(blobs_dir) if blobs_dir.exists() else 0
+    )
     ollama_total_gb = round(ollama_total_bytes / (1024**3), 1)
 
     # Count orphan blobs
     referenced = _collect_referenced_digests(manifests_dir)
-    orphan_count = 0
-    orphan_bytes = 0
-    if blobs_dir.exists():
-        for name in os.listdir(blobs_dir):
-            digest = name.replace("-", ":")
-            if digest not in referenced:
-                try:
-                    orphan_bytes += (
-                        (blobs_dir / name).stat().st_size
-                    )
-                    orphan_count += 1
-                except OSError:
-                    continue
+    orphan_count, orphan_bytes = (
+        _find_orphan_stats(blobs_dir, referenced)
+        if blobs_dir.exists()
+        else (0, 0)
+    )
 
     return {
         "disk_total_gb": disk_total_gb,
@@ -405,6 +420,24 @@ def cleanup_orphan_blobs() -> dict:
     }
 
 
+def _parse_manifest_digests(fpath: str) -> set[str]:
+    """Extract blob digests from a single Ollama manifest file."""
+    digests: set[str] = set()
+    try:
+        with open(fpath) as fh:
+            manifest = json.load(fh)
+        cfg_d = manifest.get("config", {}).get("digest", "")
+        if cfg_d:
+            digests.add(cfg_d)
+        for layer in manifest.get("layers", []):
+            d = layer.get("digest", "")
+            if d:
+                digests.add(d)
+    except Exception:  # noqa: BLE001
+        pass
+    return digests
+
+
 def _collect_referenced_digests(
     manifests_dir: Path,
 ) -> set[str]:
@@ -415,20 +448,7 @@ def _collect_referenced_digests(
     for root, _dirs, files in os.walk(manifests_dir):
         for fname in files:
             fpath = os.path.join(root, fname)
-            try:
-                with open(fpath) as fh:
-                    manifest = json.load(fh)
-                cfg_d = manifest.get(
-                    "config", {},
-                ).get("digest", "")
-                if cfg_d:
-                    referenced.add(cfg_d)
-                for layer in manifest.get("layers", []):
-                    d = layer.get("digest", "")
-                    if d:
-                        referenced.add(d)
-            except Exception:  # noqa: BLE001
-                continue
+            referenced.update(_parse_manifest_digests(fpath))
     return referenced
 
 

@@ -1,5 +1,28 @@
 "use client";
 
+function getSourceModelHint(jobType: string): string {
+  if (jobType === "pull_abliterated") return "Ollama Hub tag for the pre-built abliterated model.";
+  if (jobType === "abliterate") return "HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B-Instruct).";
+  return "HuggingFace model ID. Max 8B params on 16GB RAM.";
+}
+
+function getJobProgress(status: string, progressPct: number): React.ReactNode {
+  if (status === "running") {
+    return (
+      <div className="flex items-center gap-2">
+        <Progress value={progressPct} className="h-2 flex-1" />
+        <span className="text-xs text-muted-foreground w-10 text-right">
+          {Math.round(progressPct)}%
+        </span>
+      </div>
+    );
+  }
+  if (status === "completed") {
+    return <span className="text-xs text-emerald-500">100%</span>;
+  }
+  return <span className="text-xs text-muted-foreground">&mdash;</span>;
+}
+
 import Link from "next/link";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
@@ -249,11 +272,7 @@ export default function WorkshopPage() {
                     onChange={(e) => setSourceModel(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {jobType === "pull_abliterated"
-                      ? "Ollama Hub tag for the pre-built abliterated model."
-                      : jobType === "abliterate"
-                        ? "HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B-Instruct)."
-                        : "HuggingFace model ID. Max 8B params on 16GB RAM."}
+                    {getSourceModelHint(jobType)}
                   </p>
                 </div>
 
@@ -354,13 +373,14 @@ export default function WorkshopPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
+                {["s1", "s2", "s3", "s4", "s5"].map((id) => (
+                  <Skeleton key={id} className="h-14 w-full" />
                 ))}
               </div>
-            ) : filtered.length === 0 ? (
+            )}
+            {!isLoading && filtered.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Wrench className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-sm font-medium">
@@ -372,7 +392,8 @@ export default function WorkshopPage() {
                     : "Create your first fine-tuning job to get started."}
                 </p>
               </div>
-            ) : (
+            )}
+            {!isLoading && filtered.length > 0 && (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -425,25 +446,7 @@ export default function WorkshopPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="min-w-[120px]">
-                          {job.status === "running" ? (
-                            <div className="flex items-center gap-2">
-                              <Progress
-                                value={job.progress_pct}
-                                className="h-2 flex-1"
-                              />
-                              <span className="text-xs text-muted-foreground w-10 text-right">
-                                {Math.round(job.progress_pct)}%
-                              </span>
-                            </div>
-                          ) : job.status === "completed" ? (
-                            <span className="text-xs text-emerald-500">
-                              100%
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
+                          {getJobProgress(job.status, job.progress_pct)}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-xs">
                           {formatDistanceToNow(new Date(job.created_at), {

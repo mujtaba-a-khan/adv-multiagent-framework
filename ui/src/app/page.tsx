@@ -1,5 +1,10 @@
 "use client";
 
+function getHealthLabel(health: { healthy: boolean } | undefined | null): string | null {
+  if (!health) return null;
+  return health.healthy ? "Online" : "Offline";
+}
+
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -58,7 +63,7 @@ export default function DashboardPage() {
           />
           <StatsCard
             title="Ollama Status"
-            value={health ? (health.healthy ? "Online" : "Offline") : null}
+            value={getHealthLabel(health)}
             description={health?.provider ?? "Checking..."}
             icon={<Target className="h-4 w-4 text-muted-foreground" />}
             valueClassName={
@@ -91,15 +96,15 @@ export default function DashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              {expLoading ? (
+              {expLoading && (
                 <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
+                  {["s1", "s2", "s3"].map((id) => (
+                    <Skeleton key={id} className="h-16 w-full" />
                   ))}
                 </div>
-              ) : experiments.length === 0 ? (
-                <EmptyState />
-              ) : (
+              )}
+              {!expLoading && experiments.length === 0 && <EmptyState />}
+              {!expLoading && experiments.length > 0 && (
                 <div className="space-y-3">
                   {experiments.map((exp) => (
                     <Link
@@ -219,13 +224,13 @@ function StatsCard({
   description,
   icon,
   valueClassName,
-}: {
+}: Readonly<{
   title: string;
   value: string | number | null;
   description: string;
   icon: React.ReactNode;
   valueClassName?: string;
-}) {
+}>) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">

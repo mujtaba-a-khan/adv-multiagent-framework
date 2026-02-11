@@ -1,5 +1,11 @@
 "use client";
 
+function getStepColor(isActive: boolean, isDone: boolean): string {
+  if (isActive) return "bg-primary text-primary-foreground";
+  if (isDone) return "bg-primary/10 text-primary hover:bg-primary/20";
+  return "bg-muted text-muted-foreground";
+}
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -117,12 +123,7 @@ export default function NewExperimentPage() {
                 <button
                   onClick={() => i < step && setStep(i)}
                   disabled={i > step}
-                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${isActive
-                      ? "bg-primary text-primary-foreground"
-                      : isDone
-                        ? "bg-primary/10 text-primary hover:bg-primary/20"
-                        : "bg-muted text-muted-foreground"
-                    }`}
+                  className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${getStepColor(isActive, isDone)}`}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{s.label}</span>
@@ -386,11 +387,11 @@ function StepCard({
   title,
   description,
   children,
-}: {
+}: Readonly<{
   title: string;
   description: string;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <Card>
       <CardHeader>
@@ -408,13 +409,13 @@ function AgentModelSelector({
   value,
   models,
   onChange,
-}: {
+}: Readonly<{
   label: string;
   description: string;
   value: string;
   models: string[];
   onChange: (val: string) => void;
-}) {
+}>) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -439,11 +440,11 @@ function ReviewRow({
   label,
   value,
   truncate,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   truncate?: boolean;
-}) {
+}>) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="text-sm text-muted-foreground">{label}</span>

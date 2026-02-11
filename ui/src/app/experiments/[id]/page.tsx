@@ -263,20 +263,22 @@ export default function ExperimentDetailPage() {
             )}
           </CardHeader>
           <CardContent>
-            {sessLoading ? (
+            {sessLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                {["s1", "s2", "s3"].map((id) => (
+                  <Skeleton key={id} className="h-12 w-full" />
                 ))}
               </div>
-            ) : sessions.length === 0 ? (
+            )}
+            {!sessLoading && sessions.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Radio className="h-8 w-8 text-muted-foreground" />
                 <p className="mt-3 text-sm text-muted-foreground">
                   No sessions yet. Launch one to start the adversarial battle.
                 </p>
               </div>
-            ) : (
+            )}
+            {!sessLoading && sessions.length > 0 && (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -324,12 +326,12 @@ function ConfigCard({
   label,
   value,
   sub,
-}: {
+}: Readonly<{
   icon: React.ReactNode;
   label: string;
   value: string;
   sub: string;
-}) {
+}>) {
   return (
     <Card>
       <CardContent className="pt-6">
@@ -359,13 +361,13 @@ function SessionRow({
   session,
   experimentId,
   onDelete,
-}: {
+}: Readonly<{
   session: Session;
   experimentId: string;
   onDelete: (sessionId: string) => void;
-}) {
+}>) {
   const asr =
-    session.asr !== null ? `${(session.asr * 100).toFixed(1)}%` : "—";
+    session.asr === null ? "—" : `${(session.asr * 100).toFixed(1)}%`;
 
   return (
     <TableRow>

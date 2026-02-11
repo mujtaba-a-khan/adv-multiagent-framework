@@ -1,5 +1,11 @@
 "use client";
 
+function getLogLevelColor(level: string): string {
+  if (level === "error") return "text-red-400";
+  if (level === "warning") return "text-amber-400";
+  return "text-zinc-400";
+}
+
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
@@ -313,16 +319,10 @@ export default function WorkshopJobDetailPage() {
                   {logs.length === 0 && (
                     <p className="text-zinc-500">Waiting for log output...</p>
                   )}
-                  {logs.map((entry, i) => (
-                    <div key={i} className="flex gap-2">
+                  {logs.map((entry) => (
+                    <div key={`${entry.level}:${entry.message}`} className="flex gap-2">
                       <span
-                        className={
-                          entry.level === "error"
-                            ? "text-red-400"
-                            : entry.level === "warning"
-                              ? "text-amber-400"
-                              : "text-zinc-400"
-                        }
+                        className={getLogLevelColor(entry.level)}
                       >
                         [{entry.level.toUpperCase()}]
                       </span>

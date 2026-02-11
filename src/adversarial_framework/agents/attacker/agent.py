@@ -7,8 +7,9 @@ be expanded into a hierarchical subgraph (Planner → Executor → Validator).
 
 from __future__ import annotations
 
-import structlog
 from typing import Any
+
+import structlog
 
 from adversarial_framework.agents.base import BaseAgent
 from adversarial_framework.agents.target.providers.base import BaseProvider
@@ -18,6 +19,24 @@ from adversarial_framework.strategies.base import AttackResult
 from adversarial_framework.strategies.registry import StrategyRegistry
 
 logger = structlog.get_logger(__name__)
+
+
+def _build_judge_feedback(
+    state: AdversarialState,
+) -> tuple[str, JudgeVerdict | str]:
+    """Extract judge feedback string and verdict from state."""
+    verdict = state.get("judge_verdict", JudgeVerdict.REFUSED)
+    confidence = state.get("judge_confidence", 0.0)
+    judge_reason = state.get("judge_reason")
+    v_str = (
+        verdict.value
+        if isinstance(verdict, JudgeVerdict)
+        else str(verdict)
+    )
+    parts = [f"Verdict: {v_str}", f"Confidence: {confidence}"]
+    if judge_reason:
+        parts.append(f"Reason: {judge_reason}")
+    return ", ".join(parts), verdict
 
 
 class AttackerAgent(BaseAgent):
@@ -104,18 +123,8 @@ class AttackerAgent(BaseAgent):
                 # Subsequent turns: refine based on feedback
                 previous_prompt = state.get("current_attack_prompt", "")
                 target_response = state.get("target_response", "")
-                verdict = state.get("judge_verdict", JudgeVerdict.REFUSED)
-                confidence = state.get("judge_confidence", 0.0)
-                judge_reason = state.get("judge_reason")
-                fb_parts = [
-                    f"Verdict: {verdict.value if isinstance(verdict, JudgeVerdict) else verdict}",
-                    f"Confidence: {confidence}",
-                ]
-                if judge_reason:
-                    fb_parts.append(f"Reason: {judge_reason}")
-                judge_feedback = ", ".join(fb_parts)
+                judge_feedback, verdict = _build_judge_feedback(state)
 
-                # Include attack history so strategies can avoid repetition
                 strategy_params["_attack_history"] = attack_history
                 strategy_params["_previous_verdict"] = (
                     verdict.value
@@ -127,7 +136,11 @@ class AttackerAgent(BaseAgent):
                     "attacker_refine",
                     strategy=strategy_name,
                     turn=current_turn,
-                    prev_verdict=verdict.value if isinstance(verdict, JudgeVerdict) else verdict,
+                    prev_verdict=(
+                        verdict.value
+                        if isinstance(verdict, JudgeVerdict)
+                        else verdict
+                    ),
                 )
                 result = await strategy.refine(
                     objective=objective,

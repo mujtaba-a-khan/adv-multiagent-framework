@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,43 +33,56 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-def get_experiment_repo(
-    session: AsyncSession = Depends(get_db),
-) -> ExperimentRepository:
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+def get_experiment_repo(session: DbSession) -> ExperimentRepository:
     return ExperimentRepository(session)
 
 
-def get_session_repo(
-    session: AsyncSession = Depends(get_db),
-) -> SessionRepository:
+def get_session_repo(session: DbSession) -> SessionRepository:
     return SessionRepository(session)
 
 
-def get_turn_repo(
-    session: AsyncSession = Depends(get_db),
-) -> TurnRepository:
+def get_turn_repo(session: DbSession) -> TurnRepository:
     return TurnRepository(session)
 
 
-def get_finetuning_repo(
-    session: AsyncSession = Depends(get_db),
-) -> FineTuningJobRepository:
+def get_finetuning_repo(session: DbSession) -> FineTuningJobRepository:
     return FineTuningJobRepository(session)
 
 
 def get_abliteration_prompt_repo(
-    session: AsyncSession = Depends(get_db),
+    session: DbSession,
 ) -> AbliterationPromptRepository:
     return AbliterationPromptRepository(session)
 
 
-def get_playground_repo(
-    session: AsyncSession = Depends(get_db),
-) -> PlaygroundRepository:
+def get_playground_repo(session: DbSession) -> PlaygroundRepository:
     return PlaygroundRepository(session)
 
 
-def get_ollama_provider(
-    settings: Settings = Depends(get_settings),
-) -> OllamaProvider:
+SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+def get_ollama_provider(settings: SettingsDep) -> OllamaProvider:
     return OllamaProvider(base_url=settings.ollama_base_url)
+
+# Annotated DI aliases for endpoint signatures
+ExperimentRepoDep = Annotated[
+    ExperimentRepository, Depends(get_experiment_repo)
+]
+SessionRepoDep = Annotated[SessionRepository, Depends(get_session_repo)]
+TurnRepoDep = Annotated[TurnRepository, Depends(get_turn_repo)]
+FineTuningRepoDep = Annotated[
+    FineTuningJobRepository, Depends(get_finetuning_repo)
+]
+AbliterationPromptRepoDep = Annotated[
+    AbliterationPromptRepository, Depends(get_abliteration_prompt_repo)
+]
+PlaygroundRepoDep = Annotated[
+    PlaygroundRepository, Depends(get_playground_repo)
+]
+OllamaProviderDep = Annotated[
+    OllamaProvider, Depends(get_ollama_provider)
+]

@@ -252,10 +252,10 @@ export default function DatasetPage() {
     setIsGeneratingAll(false);
     setGeneratingId(null);
     setGenProgress(null);
-    if (!shouldStopRef.current) {
-      toast.success("All counterparts generated");
-    } else {
+    if (shouldStopRef.current) {
       toast.info("Generation stopped");
+    } else {
+      toast.success("All counterparts generated");
     }
   }, [selectedModel, unpairedHarmful, generateMutation]);
 
@@ -402,7 +402,7 @@ export default function DatasetPage() {
   const openEdit = (prompt: AbliterationPrompt) => {
     setEditPrompt(prompt);
     setEditText(prompt.text);
-    setEditCategory(prompt.category as PromptCategory);
+    setEditCategory(prompt.category);
     setEditOpen(true);
   };
 
@@ -639,14 +639,13 @@ export default function DatasetPage() {
                 </SelectContent>
               </Select>
 
-              {isStopping ? (
-                /* ── Stopping state ─────────────────── */
+              {isStopping && (
                 <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Releasing model...
                 </div>
-              ) : !isModelLoaded ? (
-                /* ── Not loaded state ───────────────── */
+              )}
+              {!isStopping && !isModelLoaded && (
                 <Button
                   onClick={handleInitializeModel}
                   disabled={
@@ -667,8 +666,8 @@ export default function DatasetPage() {
                     </>
                   )}
                 </Button>
-              ) : (
-                /* ── Loaded state ───────────────────── */
+              )}
+              {!isStopping && isModelLoaded && (
                 <>
                   <div className="flex items-center gap-1.5 text-sm text-emerald-500">
                     <CircleDot className="h-3.5 w-3.5" />
@@ -927,13 +926,14 @@ export default function DatasetPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {isLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full" />
+                {["s1", "s2", "s3", "s4", "s5"].map((id) => (
+                  <Skeleton key={id} className="h-24 w-full" />
                 ))}
               </div>
-            ) : prompts.length === 0 ? (
+            )}
+            {!isLoading && prompts.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Database className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-sm font-medium">
@@ -944,7 +944,8 @@ export default function DatasetPage() {
                   get started.
                 </p>
               </div>
-            ) : (
+            )}
+            {!isLoading && prompts.length > 0 && (
               <div className="space-y-3">
                 {/* Paired cards */}
                 {pairs.map((pair) => (
@@ -1041,11 +1042,11 @@ function PairedCard({
   pair,
   onEdit,
   onDelete,
-}: {
+}: Readonly<{
   pair: PromptPair;
   onEdit: (p: AbliterationPrompt) => void;
   onDelete: (id: string) => void;
-}) {
+}>) {
   return (
     <div className="overflow-hidden rounded-lg border">
       {/* Harmful half */}
@@ -1076,7 +1077,7 @@ function UnpairedCard({
   onEdit,
   onDelete,
   onGenerate,
-}: {
+}: Readonly<{
   prompt: AbliterationPrompt;
   isModelLoaded: boolean;
   isGenerating: boolean;
@@ -1084,7 +1085,7 @@ function UnpairedCard({
   onEdit: (p: AbliterationPrompt) => void;
   onDelete: (id: string) => void;
   onGenerate: (p: AbliterationPrompt) => void;
-}) {
+}>) {
   const showGenerate =
     prompt.category === "harmful" && isModelLoaded;
 
@@ -1127,11 +1128,11 @@ function PromptHalf({
   prompt,
   onEdit,
   onDelete,
-}: {
+}: Readonly<{
   prompt: AbliterationPrompt;
   onEdit: (p: AbliterationPrompt) => void;
   onDelete: (id: string) => void;
-}) {
+}>) {
   const isHarmful = prompt.category === "harmful";
 
   return (

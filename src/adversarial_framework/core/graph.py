@@ -215,15 +215,23 @@ def _build_defense_applicator(
             )
 
         # If a prompt patch was generated, update the system prompt
-        for action in new_actions:
-            if action.defense_type == DefenseType.PROMPT_PATCH.value:
-                patched = action.defense_config.get("patched_prompt")
-                if patched:
-                    return {"target_system_prompt": patched}
+        patched = _find_prompt_patch(new_actions)
+        if patched:
+            return {"target_system_prompt": patched}
 
         return {}
 
     return _apply
+
+
+def _find_prompt_patch(actions: list[DefenseAction]) -> str | None:
+    """Return the patched prompt from a PROMPT_PATCH action, if any."""
+    for action in actions:
+        if action.defense_type == DefenseType.PROMPT_PATCH.value:
+            patched = action.defense_config.get("patched_prompt")
+            if patched:
+                return patched
+    return None
 
 
 def _instantiate_defense(
@@ -279,6 +287,38 @@ _DEFENSE_TYPE_TO_REGISTRY: dict[str, str] = {
 }
 
 
+def _load_initial_defenses(
+    target: TargetInterface,
+    initial_defenses: list[dict[str, Any]],
+    provider: BaseProvider,
+    defense_model: str | None,
+) -> None:
+    """Load pre-configured defenses onto the target interface."""
+    DefenseRegistry.discover()
+    for defense_cfg in initial_defenses:
+        defense_name = defense_cfg.get("name", "")
+        defense_params = dict(defense_cfg.get("params", {}))
+        try:
+            cls = DefenseRegistry.get(defense_name)
+            # Inject provider and model for LLM-powered defenses
+            if defense_name in _PROVIDER_DEFENSES:
+                defense_params["provider"] = provider
+                if "model" not in defense_params and defense_model:
+                    defense_params["model"] = defense_model
+            defense_instance = cls(**defense_params)
+            target.add_defense(defense_instance)
+            logger.info(
+                "initial_defense_loaded",
+                defense=defense_name,
+            )
+        except (KeyError, TypeError) as exc:
+            logger.warning(
+                "initial_defense_load_failed",
+                name=defense_name,
+                error=str(exc),
+            )
+
+
 # Graph Builder
 
 def build_graph(
@@ -322,29 +362,10 @@ def build_graph(
 
     # Load pre-configured defenses for defense mode
     if session_mode == "defense" and initial_defenses:
-        DefenseRegistry.discover()
-        for defense_cfg in initial_defenses:
-            defense_name = defense_cfg.get("name", "")
-            defense_params = dict(defense_cfg.get("params", {}))
-            try:
-                cls = DefenseRegistry.get(defense_name)
-                # Inject provider and model for LLM-powered defenses
-                if defense_name in _PROVIDER_DEFENSES:
-                    defense_params["provider"] = provider
-                    if "model" not in defense_params and defense_model:
-                        defense_params["model"] = defense_model
-                defense_instance = cls(**defense_params)
-                target.add_defense(defense_instance)
-                logger.info(
-                    "initial_defense_loaded",
-                    defense=defense_name,
-                )
-            except (KeyError, TypeError) as exc:
-                logger.warning(
-                    "initial_defense_load_failed",
-                    name=defense_name,
-                    error=str(exc),
-                )
+        _load_initial_defenses(
+            target, initial_defenses, provider, defense_model,
+        )
+
     record_history = _build_history_recorder()
     apply_defenses = _build_defense_applicator(
         target, provider=provider, defense_model=defense_model,

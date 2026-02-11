@@ -7,14 +7,11 @@ import uuid
 from dataclasses import dataclass
 
 import structlog
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
-from adversarial_framework.agents.target.providers.ollama import (
-    OllamaProvider,
-)
 from adversarial_framework.api.dependencies import (
-    get_finetuning_repo,
-    get_ollama_provider,
+    FineTuningRepoDep,
+    OllamaProviderDep,
 )
 from adversarial_framework.api.schemas.requests import (
     CreateFineTuningJobRequest,
@@ -23,12 +20,11 @@ from adversarial_framework.api.schemas.responses import (
     FineTuningJobListResponse,
     FineTuningJobResponse,
 )
-from adversarial_framework.db.repositories.finetuning import (
-    FineTuningJobRepository,
-)
 
 logger = structlog.get_logger(__name__)
 router = APIRouter()
+
+_JOB_NOT_FOUND = "Job not found"
 
 
 @dataclass(frozen=True)
@@ -59,10 +55,10 @@ class _FineTuningJobSnapshot:
 # CRUD
 
 
-@router.post("/jobs", response_model=FineTuningJobResponse, status_code=201)
+@router.post("/jobs", status_code=201)
 async def create_job(
     body: CreateFineTuningJobRequest,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
+    repo: FineTuningRepoDep,
 ) -> FineTuningJobResponse:
     job = await repo.create(
         name=body.name,
@@ -74,12 +70,12 @@ async def create_job(
     return FineTuningJobResponse.model_validate(job)
 
 
-@router.get("/jobs", response_model=FineTuningJobListResponse)
+@router.get("/jobs")
 async def list_jobs(
+    repo: FineTuningRepoDep,
     offset: int = 0,
     limit: int = 50,
     status: str | None = None,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
 ) -> FineTuningJobListResponse:
     jobs, total = await repo.list_all(
         offset=offset, limit=limit, status=status
@@ -90,25 +86,25 @@ async def list_jobs(
     )
 
 
-@router.get("/jobs/{job_id}", response_model=FineTuningJobResponse)
+@router.get("/jobs/{job_id}")
 async def get_job(
     job_id: uuid.UUID,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
+    repo: FineTuningRepoDep,
 ) -> FineTuningJobResponse:
     job = await repo.get(job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     return FineTuningJobResponse.model_validate(job)
 
 
 @router.delete("/jobs/{job_id}", status_code=204)
 async def delete_job(
     job_id: uuid.UUID,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
+    repo: FineTuningRepoDep,
 ) -> None:
     job = await repo.get(job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     if job.status == "running":
         raise HTTPException(
             status_code=409, detail="Cannot delete a running job"
@@ -119,19 +115,17 @@ async def delete_job(
 #Start / Cancel
 
 
-@router.post(
-    "/jobs/{job_id}/start", response_model=FineTuningJobResponse
-)
+@router.post("/jobs/{job_id}/start")
 async def start_job(
     job_id: uuid.UUID,
     background_tasks: BackgroundTasks,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    repo: FineTuningRepoDep,
+    provider: OllamaProviderDep,
 ) -> FineTuningJobResponse:
     """Start a fine-tuning/abliteration job in the background."""
     job = await repo.get(job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     if job.status != "pending":
         raise HTTPException(
             status_code=409,
@@ -155,12 +149,10 @@ async def start_job(
     return FineTuningJobResponse.model_validate(job)
 
 
-@router.post(
-    "/jobs/{job_id}/cancel", response_model=FineTuningJobResponse
-)
+@router.post("/jobs/{job_id}/cancel")
 async def cancel_job(
     job_id: uuid.UUID,
-    repo: FineTuningJobRepository = Depends(get_finetuning_repo),
+    repo: FineTuningRepoDep,
 ) -> FineTuningJobResponse:
     """Request cancellation of a running job."""
     from adversarial_framework.services.finetuning.runner import (
@@ -169,7 +161,7 @@ async def cancel_job(
 
     job = await repo.get(job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND)
     if job.status != "running":
         raise HTTPException(
             status_code=409, detail="Job is not running"
@@ -207,7 +199,7 @@ async def cleanup_orphans() -> dict:
 
 @router.get("/models")
 async def list_custom_models(
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> dict:
     """List all models available in Ollama."""
     models = await provider.list_models()
@@ -217,7 +209,7 @@ async def list_custom_models(
 @router.delete("/models/{model_name}", status_code=204)
 async def delete_model(
     model_name: str,
-    provider: OllamaProvider = Depends(get_ollama_provider),
+    provider: OllamaProviderDep,
 ) -> None:
     """Delete a model from Ollama."""
     try:

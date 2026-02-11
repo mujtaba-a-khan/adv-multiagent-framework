@@ -18,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useModels, useHealthCheck } from "@/hooks/use-targets";
 
@@ -60,9 +59,8 @@ export default function TargetsPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              {healthLoading ? (
-                <Skeleton className="h-6 w-20" />
-              ) : health?.healthy ? (
+              {healthLoading && <Skeleton className="h-6 w-20" />}
+              {!healthLoading && health?.healthy && (
                 <Badge
                   variant="outline"
                   className="border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
@@ -70,7 +68,8 @@ export default function TargetsPage() {
                   <CheckCircle2 className="mr-1 h-3 w-3" />
                   Online
                 </Badge>
-              ) : (
+              )}
+              {!healthLoading && !health?.healthy && (
                 <Badge
                   variant="outline"
                   className="border-red-500/20 bg-red-500/10 text-red-500"
@@ -111,13 +110,14 @@ export default function TargetsPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            {modelsLoading ? (
+            {modelsLoading && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16" />
+                {["s1", "s2", "s3", "s4", "s5", "s6"].map((id) => (
+                  <Skeleton key={id} className="h-16" />
                 ))}
               </div>
-            ) : models.length === 0 ? (
+            )}
+            {!modelsLoading && models.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Cpu className="h-10 w-10 text-muted-foreground" />
                 <h3 className="mt-4 text-sm font-medium">No models found</h3>
@@ -128,7 +128,8 @@ export default function TargetsPage() {
                   ollama pull llama3:8b
                 </code>
               </div>
-            ) : (
+            )}
+            {!modelsLoading && models.length > 0 && (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {models.map((model) => (
                   <ModelCard key={model} name={model} />
@@ -171,7 +172,7 @@ export default function TargetsPage() {
   );
 }
 
-function ModelCard({ name }: { name: string }) {
+function ModelCard({ name }: Readonly<{ name: string }>) {
   const family = name.split(":")[0] ?? name;
   const tag = name.includes(":") ? name.split(":")[1] : null;
 
@@ -194,11 +195,11 @@ function ProviderInfo({
   name,
   desc,
   status,
-}: {
+}: Readonly<{
   name: string;
   desc: string;
   status: "connected" | "optional";
-}) {
+}>) {
   return (
     <div className="flex items-center gap-3 rounded-lg border p-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted">

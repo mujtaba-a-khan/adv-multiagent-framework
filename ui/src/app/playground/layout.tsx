@@ -32,9 +32,9 @@ import {
 
 export default function PlaygroundLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -97,13 +97,14 @@ export default function PlaygroundLayout({
 
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto px-2 pb-2">
-        {isLoading ? (
+        {isLoading && (
           <div className="space-y-2 px-1">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            {["s1", "s2", "s3", "s4"].map((id) => (
+              <Skeleton key={id} className="h-16 w-full rounded-lg" />
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        )}
+        {!isLoading && filtered.length === 0 && (
           <div className="flex flex-col items-center px-3 py-8 text-center">
             <MessageSquare className="h-6 w-6 text-muted-foreground" />
             <p className="mt-2 text-xs text-muted-foreground">
@@ -112,7 +113,8 @@ export default function PlaygroundLayout({
                 : "No matches"}
             </p>
           </div>
-        ) : (
+        )}
+        {!isLoading && filtered.length > 0 && (
           <div className="space-y-1">
             {filtered.map((conv) => (
               <Link
@@ -142,7 +144,7 @@ export default function PlaygroundLayout({
                         className={`h-4 px-1 text-[9px] ${VERDICT_BG.jailbreak}`}
                       >
                         {conv.total_jailbreaks} jailbreak
-                        {conv.total_jailbreaks !== 1 ? "s" : ""}
+                        {conv.total_jailbreaks === 1 ? "" : "s"}
                       </Badge>
                     )}
                     <span className="text-[10px] text-muted-foreground">

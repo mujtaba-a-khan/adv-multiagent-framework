@@ -4,33 +4,28 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from adversarial_framework.api.dependencies import (
-    get_session_repo,
-    get_turn_repo,
+    SessionRepoDep,
+    TurnRepoDep,
 )
 from adversarial_framework.api.schemas.responses import (
     SessionComparisonResponse,
     SessionResponse,
     TurnResponse,
 )
-from adversarial_framework.db.repositories.sessions import SessionRepository
-from adversarial_framework.db.repositories.turns import TurnRepository
 
 router = APIRouter()
 
 
-@router.get(
-    "/{experiment_id}/compare",
-    response_model=SessionComparisonResponse,
-)
+@router.get("/{experiment_id}/compare")
 async def compare_sessions(
     experiment_id: uuid.UUID,
     attack_session_id: uuid.UUID,
     defense_session_id: uuid.UUID,
-    session_repo: SessionRepository = Depends(get_session_repo),
-    turn_repo: TurnRepository = Depends(get_turn_repo),
+    session_repo: SessionRepoDep,
+    turn_repo: TurnRepoDep,
 ) -> SessionComparisonResponse:
     """Compare an attack session with a defense session side-by-side."""
     attack_session = await session_repo.get(attack_session_id)
