@@ -28,7 +28,7 @@ class HarmBenchResult:
     behavior_id: str
     test_case: str
     generation: str
-    label: int  # 1 = jailbreak, 0 = safe
+    label: int
     method: str
     model: str
     severity: float = 0.0

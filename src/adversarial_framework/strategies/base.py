@@ -13,13 +13,13 @@ from adversarial_framework.core.constants import AttackCategory
 class StrategyMetadata:
     """Metadata for strategy registration, UI display, and documentation."""
 
-    name: str  # Unique key: "pair", "crescendo", etc.
-    display_name: str  # Human-readable: "PAIR (Iterative Refinement)"
+    name: str
+    display_name: str
     category: AttackCategory
     description: str
-    estimated_asr: str  # e.g. "60-89%"
+    estimated_asr: str
     min_turns: int = 1
-    max_turns: int | None = None  # None = unlimited
+    max_turns: int | None = None
     requires_white_box: bool = False
     supports_multi_turn: bool = False
     parameters: dict[str, Any] = field(default_factory=dict)

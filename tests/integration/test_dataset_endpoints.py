@@ -39,7 +39,8 @@ async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-# Fixtures 
+# Fixtures
+
 
 @pytest.fixture(scope="module")
 def anyio_backend():
