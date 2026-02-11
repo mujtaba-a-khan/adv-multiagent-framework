@@ -67,6 +67,7 @@ dev = [
     "ruff>=0.8",
     "pre-commit>=4.0",
     "aiosqlite>=0.22.1",
+    "types-psutil>=7.2.2.20260130",
 ]
 
 [tool.ruff]
@@ -81,6 +82,8 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
+mypy_path = "src"
+explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

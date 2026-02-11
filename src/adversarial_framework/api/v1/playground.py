@@ -233,7 +233,7 @@ async def send_message(
     )
 
     t0 = time.perf_counter()
-    target_result = await target(state)
+    target_result = await target(state)  # type: ignore[arg-type]
     target_latency = (time.perf_counter() - t0) * 1000
 
     # 7. Extract defense block info

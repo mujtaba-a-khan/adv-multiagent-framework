@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -59,7 +60,7 @@ class Experiment(Base):
     # Attack configuration
     attack_objective: Mapped[str] = mapped_column(Text, nullable=False)
     strategy_name: Mapped[str] = mapped_column(String(64), nullable=False)
-    strategy_params: Mapped[dict] = mapped_column(JSON, default=dict)
+    strategy_params: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     # Budget
     max_turns: Mapped[int] = mapped_column(Integer, default=20)
@@ -93,11 +94,11 @@ class Session(Base):
     # Status & mode
     status: Mapped[str] = mapped_column(String(32), default="pending")
     session_mode: Mapped[str] = mapped_column(String(32), default="attack", nullable=False)
-    initial_defenses: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    initial_defenses: Mapped[list[Any]] = mapped_column(JSON, default=list, nullable=False)
 
     # Session-level strategy and budget (set per-session at launch time)
     strategy_name: Mapped[str] = mapped_column(String(64), nullable=False)
-    strategy_params: Mapped[dict] = mapped_column(JSON, default=dict)
+    strategy_params: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     max_turns: Mapped[int] = mapped_column(Integer, nullable=False)
     max_cost_usd: Mapped[float] = mapped_column(Float, nullable=False)
 
@@ -147,7 +148,7 @@ class Turn(Base):
 
     # Strategy
     strategy_name: Mapped[str] = mapped_column(String(64), nullable=False)
-    strategy_params: Mapped[dict] = mapped_column(JSON, default=dict)
+    strategy_params: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     # Attack
     attack_prompt: Mapped[str] = mapped_column(Text, nullable=False)
@@ -193,7 +194,7 @@ class DefenseActionRecord(Base):
     )
 
     defense_type: Mapped[str] = mapped_column(String(64), nullable=False)
-    defense_config: Mapped[dict] = mapped_column(JSON, default=dict)
+    defense_config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     triggered_by_turn: Mapped[int] = mapped_column(Integer, nullable=False)
     rationale: Mapped[str] = mapped_column(Text, nullable=False)
     block_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -226,7 +227,7 @@ class PlaygroundConversation(Base):
     analyzer_model: Mapped[str] = mapped_column(String(128), nullable=False)
 
     # Active defenses (JSON array of {name, params})
-    active_defenses: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    active_defenses: Mapped[list[Any]] = mapped_column(JSON, default=list, nullable=False)
 
     # Aggregate stats (denormalized for fast sidebar display)
     total_messages: Mapped[int] = mapped_column(Integer, default=0)
@@ -275,7 +276,7 @@ class PlaygroundMessage(Base):
     block_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Defense snapshot (which defenses were active when processed)
-    defenses_applied: Mapped[list | None] = mapped_column(JSON, nullable=True, default=None)
+    defenses_applied: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, default=None)
 
     # Analysis
     judge_verdict: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -335,7 +336,7 @@ class FineTuningJob(Base):
     output_model_name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     # Job configuration (type-specific params stored as JSON)
-    config: Mapped[dict] = mapped_column(JSON, default=dict)
+    config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     # Status tracking
     status: Mapped[str] = mapped_column(
@@ -345,7 +346,7 @@ class FineTuningJob(Base):
     current_step: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Logs (append-only JSON array of log entries)
-    logs: Mapped[list] = mapped_column(JSON, default=list)
+    logs: Mapped[list[Any]] = mapped_column(JSON, default=list)
 
     # Error info
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -377,8 +378,8 @@ class SessionReport(Base):
     )
 
     summary: Mapped[str] = mapped_column(Text, nullable=False)
-    findings: Mapped[dict] = mapped_column(JSON, default=dict)
-    recommendations: Mapped[dict] = mapped_column(JSON, default=dict)
+    findings: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    recommendations: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

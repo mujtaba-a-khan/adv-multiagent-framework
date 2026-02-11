@@ -56,10 +56,10 @@ describe("NewExperimentPage", () => {
     vi.mocked(useCreateExperiment).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateExperiment>);
     vi.mocked(useModels).mockReturnValue({
       data: { models: ["llama3:8b", "phi4:14b"] },
-    } as any);
+    } as unknown as ReturnType<typeof useModels>);
   });
 
   it("renders header with title", () => {
@@ -180,7 +180,7 @@ describe("NewExperimentPage", () => {
     vi.mocked(useCreateExperiment).mockReturnValue({
       mutate: vi.fn(),
       isPending: true,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateExperiment>);
 
     const user = userEvent.setup();
     render(<NewExperimentPage />);
@@ -196,7 +196,7 @@ describe("NewExperimentPage", () => {
   it("renders no models message when models list is empty", async () => {
     vi.mocked(useModels).mockReturnValue({
       data: { models: [] },
-    } as any);
+    } as unknown as ReturnType<typeof useModels>);
 
     const user = userEvent.setup();
     render(<NewExperimentPage />);
@@ -283,7 +283,7 @@ describe("NewExperimentPage", () => {
     vi.mocked(useCreateExperiment).mockReturnValue({
       mutate: mockMutate,
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useCreateExperiment>);
 
     const user = userEvent.setup();
     render(<NewExperimentPage />);
@@ -312,7 +312,7 @@ describe("NewExperimentPage", () => {
   it("handles undefined modelsData gracefully", async () => {
     vi.mocked(useModels).mockReturnValue({
       data: undefined,
-    } as any);
+    } as unknown as ReturnType<typeof useModels>);
 
     const user = userEvent.setup();
     render(<NewExperimentPage />);

@@ -12,6 +12,8 @@ import structlog
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
+    from adversarial_framework.api.v1.finetuning import _FineTuningJobSnapshot
+
 logger = structlog.get_logger(__name__)
 
 # Cooperative cancellation registry
@@ -33,7 +35,7 @@ class CancelledError(Exception):
 
 
 async def run_job(
-    snapshot: object,
+    snapshot: _FineTuningJobSnapshot,
     ollama_base_url: str,
 ) -> None:
     """Execute a fine-tuning job with progress tracking.

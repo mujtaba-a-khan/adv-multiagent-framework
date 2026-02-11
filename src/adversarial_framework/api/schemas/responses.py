@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -24,7 +25,7 @@ class ExperimentResponse(BaseModel):
     defender_model: str
     attack_objective: str
     strategy_name: str
-    strategy_params: dict
+    strategy_params: dict[str, Any]
     max_turns: int
     max_cost_usd: float
     created_at: datetime
@@ -46,9 +47,9 @@ class SessionResponse(BaseModel):
     experiment_id: uuid.UUID
     status: str
     session_mode: str
-    initial_defenses: list[dict]
+    initial_defenses: list[dict[str, Any]]
     strategy_name: str
-    strategy_params: dict
+    strategy_params: dict[str, Any]
     max_turns: int
     max_cost_usd: float
     total_turns: int
@@ -82,7 +83,7 @@ class TurnResponse(BaseModel):
     session_id: uuid.UUID
     turn_number: int
     strategy_name: str
-    strategy_params: dict
+    strategy_params: dict[str, Any]
     attack_prompt: str
     attacker_reasoning: str | None = None
     target_response: str
@@ -117,7 +118,7 @@ class StrategyResponse(BaseModel):
     max_turns: int | None = None
     requires_white_box: bool
     supports_multi_turn: bool
-    parameters: dict
+    parameters: dict[str, Any]
     references: list[str]
 
 
@@ -178,11 +179,11 @@ class FineTuningJobResponse(BaseModel):
     job_type: str
     source_model: str
     output_model_name: str
-    config: dict
+    config: dict[str, Any]
     status: str
     progress_pct: float
     current_step: str | None = None
-    logs: list
+    logs: list[Any]
     error_message: str | None = None
     peak_memory_gb: float | None = None
     total_duration_seconds: float | None = None
@@ -243,7 +244,7 @@ class PlaygroundConversationResponse(BaseModel):
     target_provider: str
     system_prompt: str | None = None
     analyzer_model: str
-    active_defenses: list[dict]
+    active_defenses: list[dict[str, Any]]
     total_messages: int
     total_jailbreaks: int
     total_blocked: int
@@ -270,7 +271,7 @@ class PlaygroundMessageResponse(BaseModel):
     target_blocked: bool
     blocked_by_defense: str | None = None
     block_reason: str | None = None
-    defenses_applied: list[dict] | None = None
+    defenses_applied: list[dict[str, Any]] | None = None
     judge_verdict: str
     judge_confidence: float
     severity_score: float | None = None
@@ -296,4 +297,4 @@ class WSMessage(BaseModel):
     type: str  # "turn_start", "turn_complete", "session_complete", "error"
     session_id: str
     turn_number: int | None = None
-    data: dict = {}
+    data: dict[str, Any] = {}

@@ -55,8 +55,8 @@ class AnalyzerAgent(BaseAgent):
             provider=self.provider,
             model=model,
             objective=objective,
-            attack_prompt=attack_prompt,
-            target_response=target_response,
+            attack_prompt=attack_prompt or "",
+            target_response=target_response or "",
         )
 
         verdict = judge_result.get("judge_verdict", JudgeVerdict.ERROR)
@@ -102,9 +102,9 @@ class AnalyzerAgent(BaseAgent):
             classifier_result = await run_classifier(
                 provider=self.provider,
                 model=model,
-                attack_prompt=attack_prompt,
-                target_response=target_response,
-                strategy_name=strategy_name,
+                attack_prompt=attack_prompt or "",
+                target_response=target_response or "",
+                strategy_name=strategy_name or "unknown",
             )
             updates.update(classifier_result)
 

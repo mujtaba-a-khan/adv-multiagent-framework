@@ -43,7 +43,10 @@ class TokenBucketRateLimiter:
         default_refill_rate: float = 1.0,
         key_prefix: str = "ratelimit",
     ) -> None:
-        self._redis: aioredis.Redis = aioredis.from_url(redis_url, decode_responses=True)
+        self._redis: aioredis.Redis = aioredis.from_url(  # type: ignore[no-untyped-call]
+            redis_url,
+            decode_responses=True,
+        )
         self._default_capacity = default_capacity
         self._default_refill_rate = default_refill_rate
         self._key_prefix = key_prefix
@@ -120,7 +123,15 @@ class TokenBucketRateLimiter:
         return {allowed, math.floor(remaining), tostring(retry_after)}
         """
 
-        result = await self._redis.eval(lua_script, 1, key, cap, rate, now, tokens)
+        result = await self._redis.eval(  # type: ignore[misc]
+            lua_script,
+            1,
+            key,
+            cap,
+            rate,
+            now,
+            tokens,
+        )
         allowed = bool(result[0])
         remaining = int(result[1])
         retry_after = float(result[2])
@@ -149,7 +160,7 @@ class TokenBucketRateLimiter:
         now = time.time()
         key = self._key(bucket_id)
 
-        data = await self._redis.hmget(key, "tokens", "last_refill")
+        data = await self._redis.hmget(key, "tokens", "last_refill")  # type: ignore[misc, arg-type]
         tokens = float(data[0]) if data[0] else float(cap)
         last_refill = float(data[1]) if data[1] else now
 
@@ -171,7 +182,7 @@ class TokenBucketRateLimiter:
 
 
 # Provider-specific rate limit presets (requests per minute)
-PROVIDER_RATE_LIMITS: dict[str, dict[str, int]] = {
+PROVIDER_RATE_LIMITS: dict[str, dict[str, int | float]] = {
     "ollama": {"capacity": 120, "refill_rate": 2},  # local, generous
     "openai": {"capacity": 60, "refill_rate": 1},  # Tier 1 default
     "anthropic": {"capacity": 50, "refill_rate": 0.83},  # Conservative

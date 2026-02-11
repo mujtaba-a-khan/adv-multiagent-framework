@@ -10,6 +10,7 @@ import shutil
 import tempfile
 from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -25,7 +26,7 @@ ProgressCallback = Callable[[float, str], Awaitable[None]]
 async def run_sft(
     source_model: str,
     output_name: str,
-    config: dict,
+    config: dict[str, Any],
     ollama_base_url: str,
     on_progress: ProgressCallback,
 ) -> None:

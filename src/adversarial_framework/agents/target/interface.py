@@ -8,13 +8,16 @@ runtime by the Defender agent (live patching / adversarial arms race).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
 
 from adversarial_framework.agents.target.providers.base import BaseProvider
 from adversarial_framework.core.state import AdversarialState
 from adversarial_framework.defenses.base import BaseDefense
+
+if TYPE_CHECKING:
+    from adversarial_framework.core.state import TokenBudget
 
 logger = structlog.get_logger(__name__)
 
@@ -150,13 +153,13 @@ class TargetInterface:
 
 
 # Budget helpers
-def _zero_budget() -> dict[str, int | float]:
+def _zero_budget() -> TokenBudget:
     from adversarial_framework.core.state import TokenBudget
 
     return TokenBudget()
 
 
-def _target_budget(tokens: int) -> dict[str, int | float]:
+def _target_budget(tokens: int) -> TokenBudget:
     from adversarial_framework.core.state import TokenBudget
 
     return TokenBudget(total_target_tokens=tokens)

@@ -7,6 +7,7 @@ updates as the LangGraph adversarial loop executes.
 from __future__ import annotations
 
 import contextlib
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -18,7 +19,7 @@ router = APIRouter()
 _connections: dict[str, list[WebSocket]] = {}
 
 
-async def broadcast(session_id: str, message: dict) -> None:
+async def broadcast(session_id: str, message: dict[str, Any]) -> None:
     """Send a message to all WebSocket clients watching a session."""
     clients = _connections.get(session_id, [])
     disconnected: list[WebSocket] = []
@@ -36,7 +37,7 @@ async def broadcast(session_id: str, message: dict) -> None:
 _ft_connections: dict[str, list[WebSocket]] = {}
 
 
-async def broadcast_finetuning(job_id: str, message: dict) -> None:
+async def broadcast_finetuning(job_id: str, message: dict[str, Any]) -> None:
     """Send a message to all WebSocket clients watching a fine-tuning job."""
     clients = _ft_connections.get(job_id, [])
     disconnected: list[WebSocket] = []
@@ -78,7 +79,7 @@ async def ws_finetuning(websocket: WebSocket, job_id: str) -> None:
 _pg_connections: dict[str, list[WebSocket]] = {}
 
 
-async def broadcast_playground(conversation_id: str, message: dict) -> None:
+async def broadcast_playground(conversation_id: str, message: dict[str, Any]) -> None:
     """Send a message to all WebSocket clients watching a playground."""
     clients = _pg_connections.get(conversation_id, [])
     disconnected: list[WebSocket] = []

@@ -60,10 +60,10 @@ class DefenderAgent(BaseAgent):
             rule_result = await generate_guardrail(
                 provider=self.provider,
                 model=model,
-                attack_prompt=attack_prompt,
-                target_response=target_response,
-                strategy_name=strategy_name,
-                vulnerability=vulnerability,
+                attack_prompt=attack_prompt or "",
+                target_response=target_response or "",
+                strategy_name=strategy_name or "unknown",
+                vulnerability=vulnerability or "unknown",
             )
             total_tokens += rule_result.get("token_usage", 0)
 
@@ -86,9 +86,9 @@ class DefenderAgent(BaseAgent):
             patch_result = await generate_prompt_patch(
                 provider=self.provider,
                 model=model,
-                attack_prompt=attack_prompt,
-                target_response=target_response,
-                strategy_name=strategy_name,
+                attack_prompt=attack_prompt or "",
+                target_response=target_response or "",
+                strategy_name=strategy_name or "unknown",
                 current_system_prompt=state.get("target_system_prompt", ""),
             )
             total_tokens += patch_result.get("token_usage", 0)

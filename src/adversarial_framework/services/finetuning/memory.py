@@ -69,11 +69,12 @@ def get_available_memory_gb() -> float:
         return 16.0  # Assume 16GB if we can't check
 
     if platform.system() == "Darwin":
-        total = psutil.virtual_memory().total / (1024**3)
+        total: float = psutil.virtual_memory().total / (1024**3)
         os_reserve_gb = 2.0
         return max(total - os_reserve_gb, 1.0)
 
-    return psutil.virtual_memory().available / (1024**3)
+    available: float = psutil.virtual_memory().available / (1024**3)
+    return available
 
 
 def check_memory_feasibility(

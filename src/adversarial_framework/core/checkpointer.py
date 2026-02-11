@@ -6,7 +6,7 @@ checkpointer for CLI / testing.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -21,7 +21,7 @@ def get_memory_checkpointer() -> MemorySaver:
 
 async def get_postgres_checkpointer(
     connection_string: str,
-) -> BaseCheckpointSaver:
+) -> BaseCheckpointSaver[Any]:
     """Return an async PostgreSQL checkpointer for production.
 
     Requires `langgraph-checkpoint-postgres` and a valid Neon connection
@@ -40,5 +40,5 @@ async def get_postgres_checkpointer(
         conn_str = conn_str.replace("+asyncpg", "")
 
     saver = AsyncPostgresSaver.from_conn_string(conn_str)
-    await saver.setup()
-    return saver
+    await saver.setup()  # type: ignore[attr-defined]
+    return saver  # type: ignore[return-value]

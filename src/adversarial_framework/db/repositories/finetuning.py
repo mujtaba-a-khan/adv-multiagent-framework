@@ -98,7 +98,7 @@ class FineTuningJobRepository:
             update(FineTuningJob).where(FineTuningJob.id == job_id).values(**values)
         )
 
-    async def append_log(self, job_id: uuid.UUID, entry: dict) -> None:
+    async def append_log(self, job_id: uuid.UUID, entry: dict[str, object]) -> None:
         job = await self.get(job_id)
         if job is not None:
             logs = list(job.logs) if job.logs else []

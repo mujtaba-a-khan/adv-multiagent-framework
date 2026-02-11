@@ -45,6 +45,9 @@ class BaseAttackStrategy(ABC):
 
     metadata: StrategyMetadata  # Must be set by the subclass as a class attribute
 
+    def __init__(self, **kwargs: Any) -> None:  # noqa: B027
+        pass
+
     @abstractmethod
     async def generate(
         self,

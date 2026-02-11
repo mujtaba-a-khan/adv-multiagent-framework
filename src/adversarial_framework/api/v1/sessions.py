@@ -19,6 +19,9 @@ from adversarial_framework.api.dependencies import (
 
 if TYPE_CHECKING:
     from adversarial_framework.agents.target.providers.ollama import OllamaProvider
+    from adversarial_framework.core.state import AttackTurn
+    from adversarial_framework.db.models import Experiment
+
 from adversarial_framework.api.schemas.requests import StartSessionRequest
 from adversarial_framework.api.schemas.responses import (
     SessionListResponse,
@@ -55,7 +58,7 @@ class _ExperimentSnapshot:
     attack_objective: str
 
     @classmethod
-    def from_orm(cls, experiment: object) -> _ExperimentSnapshot:
+    def from_orm(cls, experiment: Experiment) -> _ExperimentSnapshot:
         return cls(
             id=experiment.id,
             target_model=experiment.target_model,
@@ -240,13 +243,13 @@ class _SessionMetrics:
     defender_tokens: int = 0
 
 
-def _verdict_value(turn: object) -> str:
+def _verdict_value(turn: AttackTurn) -> str:
     """Extract the string verdict from an AttackTurn."""
     v = turn.judge_verdict
     return v.value if hasattr(v, "value") else str(v)
 
 
-def _turn_to_ws_payload(turn: object, db_id: str, sid: str) -> dict:
+def _turn_to_ws_payload(turn: AttackTurn, db_id: str, sid: str) -> dict[str, Any]:
     """Convert an AttackTurn + DB id into a WebSocket-friendly dict."""
     return {
         "id": db_id,
@@ -274,7 +277,7 @@ def _turn_to_ws_payload(turn: object, db_id: str, sid: str) -> dict:
 
 
 async def _persist_turn_and_metrics(
-    turn: object,
+    turn: AttackTurn,
     session_id: uuid.UUID,
     metrics: _SessionMetrics,
 ) -> str:
@@ -325,7 +328,7 @@ async def _persist_turn_and_metrics(
 
 
 def _build_initial_state(
-    experiment: object,
+    experiment: _ExperimentSnapshot,
     sid: str,
     *,
     session_mode: str,
@@ -334,7 +337,7 @@ def _build_initial_state(
     strategy_params: dict[str, Any] | None = None,
     max_turns: int,
     max_cost_usd: float,
-) -> dict:
+) -> dict[str, Any]:
     """Assemble the initial LangGraph state from experiment + session config."""
     from adversarial_framework.core.constants import SessionStatus
     from adversarial_framework.core.state import TokenBudget
@@ -397,7 +400,7 @@ def _build_initial_state(
 
 
 async def _run_graph_session(
-    experiment: object,
+    experiment: _ExperimentSnapshot,
     session_id: uuid.UUID,
     provider: OllamaProvider,
     *,
@@ -446,7 +449,7 @@ async def _run_graph_session(
         )
         metrics = _SessionMetrics()
 
-        async for event in compiled.astream(initial_state, stream_mode="updates"):
+        async for event in compiled.astream(initial_state, stream_mode="updates"):  # type: ignore[arg-type]
             for node_name, update in event.items():
                 await _handle_node_event(node_name, update, session_id, sid, metrics, broadcast)
 
@@ -471,16 +474,16 @@ async def _run_graph_session(
         await provider.close()
 
 
-_BroadcastFn = Callable[[str, dict], Coroutine[Any, Any, None]]
+_BroadcastFn = Callable[[str, dict[str, Any]], Coroutine[Any, Any, None]]
 _NodeHandler = Callable[
-    [dict, uuid.UUID, str, "_SessionMetrics", _BroadcastFn],
+    [dict[str, Any], uuid.UUID, str, "_SessionMetrics", _BroadcastFn],
     Coroutine[Any, Any, None],
 ]
 
 
 async def _handle_node_event(
     node_name: str,
-    update: dict,
+    update: dict[str, Any],
     session_id: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -493,7 +496,7 @@ async def _handle_node_event(
 
 
 async def _on_attacker(
-    update: dict,
+    update: dict[str, Any],
     _sid: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -531,7 +534,7 @@ async def _on_attacker(
 
 
 async def _on_target(
-    update: dict,
+    update: dict[str, Any],
     _sid: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -555,7 +558,7 @@ async def _on_target(
 
 
 async def _on_record_history(
-    update: dict,
+    update: dict[str, Any],
     session_id: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -575,7 +578,7 @@ async def _on_record_history(
         )
 
 
-def _accumulate_metrics(turn: object, metrics: _SessionMetrics) -> None:
+def _accumulate_metrics(turn: AttackTurn, metrics: _SessionMetrics) -> None:
     """Update running metric counters from a completed turn."""
     verdict_val = _verdict_value(turn)
     metrics.total_turns += 1
@@ -593,7 +596,7 @@ def _accumulate_metrics(turn: object, metrics: _SessionMetrics) -> None:
 
 
 async def _on_initialize(
-    _update: dict,
+    _update: dict[str, Any],
     _session_id: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -620,7 +623,7 @@ async def _on_initialize(
 
 
 async def _on_defender(
-    update: dict,
+    update: dict[str, Any],
     _sid: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,
@@ -641,7 +644,7 @@ async def _on_defender(
 
 
 async def _on_finalize(
-    _update: dict,
+    _update: dict[str, Any],
     session_id: uuid.UUID,
     sid: str,
     metrics: _SessionMetrics,

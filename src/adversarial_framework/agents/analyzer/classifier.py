@@ -86,7 +86,8 @@ def _parse_classifier_response(text: str) -> dict[str, Any]:
             if text.startswith("json"):
                 text = text[4:]
             text = text.strip()
-        return json.loads(text)
+        parsed: dict[str, Any] = json.loads(text)
+        return parsed
     except (json.JSONDecodeError, TypeError):
         logger.warning("classifier_parse_error", raw=text[:200])
         return {"vulnerability_category": "other", "attack_technique": "unknown"}

@@ -25,6 +25,9 @@ class BaseDefense(ABC):
 
     name: str
 
+    def __init__(self, **kwargs: Any) -> None:  # noqa: B027
+        pass
+
     @abstractmethod
     async def check_input(self, prompt: str) -> DefenseCheckResult:
         """Check an input prompt before it reaches the target LLM."""

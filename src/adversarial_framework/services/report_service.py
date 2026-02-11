@@ -114,20 +114,20 @@ def _build_timeline(
     turns: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     """Build a turn-by-turn timeline summary."""
-    return [
-        {
-            "turn": t.get("turn_number", i),
-            "strategy": t.get("strategy_name", "unknown"),
-            "verdict": (
-                t.get("judge_verdict").value
-                if isinstance(t.get("judge_verdict"), JudgeVerdict)
-                else str(t.get("judge_verdict", ""))
-            ),
-            "severity": t.get("severity_score", 0) or 0,
-            "blocked": t.get("target_blocked", False),
-        }
-        for i, t in enumerate(turns)
-    ]
+    timeline: list[dict[str, Any]] = []
+    for i, t in enumerate(turns):
+        v = t.get("judge_verdict")
+        verdict_str = v.value if isinstance(v, JudgeVerdict) else str(v or "")
+        timeline.append(
+            {
+                "turn": t.get("turn_number", i),
+                "strategy": t.get("strategy_name", "unknown"),
+                "verdict": verdict_str,
+                "severity": t.get("severity_score", 0) or 0,
+                "blocked": t.get("target_blocked", False),
+            }
+        )
+    return timeline
 
 
 def generate_report(
@@ -304,11 +304,14 @@ def export_report_pdf(report: ReportData) -> bytes:
         ImportError: If reportlab is not installed.
     """
     try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-        from reportlab.lib.units import mm
-        from reportlab.platypus import (
+        from reportlab.lib import colors  # type: ignore[import-untyped]
+        from reportlab.lib.pagesizes import A4  # type: ignore[import-untyped]
+        from reportlab.lib.styles import (  # type: ignore[import-untyped]
+            ParagraphStyle,
+            getSampleStyleSheet,
+        )
+        from reportlab.lib.units import mm  # type: ignore[import-untyped]
+        from reportlab.platypus import (  # type: ignore[import-untyped]
             Paragraph,
             SimpleDocTemplate,
             Spacer,
@@ -339,7 +342,7 @@ def export_report_pdf(report: ReportData) -> bytes:
     )
     body_style = styles["BodyText"]
 
-    elements: list = []
+    elements: list[Any] = []
     m = report.metrics
 
     # Title

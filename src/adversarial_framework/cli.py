@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from typing import Any
 
 import click
 import structlog
@@ -109,7 +110,7 @@ async def _run_session(
     session_id = str(uuid.uuid4())[:8]
     experiment_id = str(uuid.uuid4())[:8]
 
-    initial_state = {
+    initial_state: dict[str, Any] = {
         "experiment_id": experiment_id,
         "session_id": session_id,
         "target_model": target_model,
@@ -161,7 +162,7 @@ async def _run_session(
 
     # Stream events
     final_state = initial_state
-    async for event in compiled.astream(initial_state, stream_mode="updates"):
+    async for event in compiled.astream(initial_state, stream_mode="updates"):  # type: ignore[arg-type]
         for node_name, updates in event.items():
             _print_node_event(node_name, updates)
         # Track latest state for summary

@@ -170,4 +170,4 @@ class AbliterationPromptRepository:
 
     async def delete_all(self) -> int:
         result = await self.db.execute(delete(AbliterationPrompt))
-        return result.rowcount  # type: ignore[return-value]
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]

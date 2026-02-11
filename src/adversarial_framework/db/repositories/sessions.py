@@ -54,7 +54,7 @@ class SessionRepository:
         return sessions, total
 
     async def update_status(self, session_id: uuid.UUID, status: str) -> None:
-        extras: dict = {}
+        extras: dict[str, object] = {}
         if status == "running":
             extras["started_at"] = datetime.now(UTC)
         elif status in ("completed", "failed", "cancelled"):

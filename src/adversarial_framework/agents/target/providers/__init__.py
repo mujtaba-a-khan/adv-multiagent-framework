@@ -3,6 +3,8 @@
 All providers implement ``BaseProvider`` and return ``LLMResponse``.
 """
 
+from typing import Any
+
 from adversarial_framework.agents.target.providers.base import (
     BaseProvider,
     LLMResponse,
@@ -18,7 +20,7 @@ __all__ = [
 ]
 
 
-def get_provider(name: str, **kwargs) -> BaseProvider:  # type: ignore[type-arg]
+def get_provider(name: str, **kwargs: Any) -> BaseProvider:
     """Factory to instantiate a provider by name.
 
     Args:

@@ -36,7 +36,7 @@ async def run_executor(
 
     # Resolve strategy
     try:
-        strategy_cls = StrategyRegistry.get(strategy_name)
+        strategy_cls = StrategyRegistry.get(strategy_name or "pair")
     except KeyError:
         return {
             "attack_prompt": None,
@@ -75,8 +75,8 @@ async def run_executor(
             )
             result = await strategy.refine(
                 objective=objective,
-                previous_prompt=previous_prompt,
-                target_response=target_response,
+                previous_prompt=previous_prompt or "",
+                target_response=target_response or "",
                 judge_feedback=judge_feedback,
                 params=strategy_params,
             )

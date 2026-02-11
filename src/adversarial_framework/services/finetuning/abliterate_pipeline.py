@@ -14,6 +14,7 @@ import shutil
 import tempfile
 from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -34,7 +35,7 @@ _LAYER_NUM_RE = re.compile(r"\.layers\.(\d+)\.")
 async def run_abliterate(
     source_model: str,
     output_name: str,
-    config: dict,
+    config: dict[str, Any],
     ollama_base_url: str,
     on_progress: ProgressCallback,
     *,
@@ -173,13 +174,13 @@ async def run_abliterate(
 
 
 def _compute_refusal_direction(
-    model: object,
-    tokenizer: object,
+    model: Any,
+    tokenizer: Any,
     harmful_prompts: list[str],
     harmless_prompts: list[str],
     layer_start_frac: float = 0.2,
     layer_end_frac: float = 0.8,
-) -> object:
+) -> Any:
     """Compute the refusal direction via mean-diff on harmful/harmless prompts.
 
     Uses intermediate hidden layers (``layer_start_frac`` to
@@ -190,7 +191,7 @@ def _compute_refusal_direction(
     """
     import torch
 
-    num_layers: int = model.config.num_hidden_layers  # type: ignore[union-attr]
+    num_layers: int = model.config.num_hidden_layers
     layer_lo = int(num_layers * layer_start_frac)
     layer_hi = int(num_layers * layer_end_frac)
     logger.info(
@@ -203,18 +204,15 @@ def _compute_refusal_direction(
         """Mean residual-stream activation across target layers."""
         all_acts: list[torch.Tensor] = []
         for prompt in prompts:
-            inputs = tokenizer(  # type: ignore[operator]
+            inputs = tokenizer(
                 prompt,
                 return_tensors="pt",
                 truncation=True,
                 max_length=128,
             )
-            inputs = {
-                k: v.to(model.device)  # type: ignore[union-attr]
-                for k, v in inputs.items()
-            }
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
             with torch.no_grad():
-                outputs = model(  # type: ignore[operator]
+                outputs = model(
                     **inputs,
                     output_hidden_states=True,
                 )
@@ -236,8 +234,8 @@ def _compute_refusal_direction(
 
 
 def _apply_abliteration(
-    model: object,
-    refusal_dir: object,
+    model: Any,
+    refusal_dir: Any,
     layer_start_frac: float = 0.2,
     layer_end_frac: float = 0.8,
 ) -> None:
@@ -250,14 +248,14 @@ def _apply_abliteration(
     """
     import torch
 
-    num_layers: int = model.config.num_hidden_layers  # type: ignore[union-attr]
+    num_layers: int = model.config.num_hidden_layers
     layer_lo = int(num_layers * layer_start_frac)
     layer_hi = int(num_layers * layer_end_frac)
 
-    refusal_dir = refusal_dir.to(dtype=torch.float16)  # type: ignore[union-attr]
+    refusal_dir = refusal_dir.to(dtype=torch.float16)
     modified = 0
 
-    for name, param in model.named_parameters():  # type: ignore[union-attr]
+    for name, param in model.named_parameters():
         if "weight" not in name:
             continue
         if param.dim() != 2:

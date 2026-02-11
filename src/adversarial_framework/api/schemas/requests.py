@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from adversarial_framework.config.settings import get_settings
@@ -28,7 +30,7 @@ class CreateExperimentRequest(BaseModel):
     # Attack config
     attack_objective: str = Field(..., min_length=1)
     strategy_name: str = Field(default="pair", max_length=64)
-    strategy_params: dict = Field(default_factory=dict)
+    strategy_params: dict[str, Any] = Field(default_factory=dict)
 
     # Budget
     max_turns: int = Field(default=20, ge=1, le=100)
@@ -41,7 +43,7 @@ class UpdateExperimentRequest(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
     target_system_prompt: str | None = None
-    strategy_params: dict | None = None
+    strategy_params: dict[str, Any] | None = None
     max_turns: int | None = Field(default=None, ge=1, le=100)
     max_cost_usd: float | None = Field(default=None, ge=0.0, le=500.0)
 
@@ -50,7 +52,7 @@ class DefenseSelectionItem(BaseModel):
     """A single defense selection with optional parameter overrides."""
 
     name: str = Field(..., min_length=1, max_length=64)
-    params: dict = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
 
 
 class StartSessionRequest(BaseModel):
@@ -61,7 +63,7 @@ class StartSessionRequest(BaseModel):
 
     # Strategy and budget (required — user selects at launch time)
     strategy_name: str = Field(..., min_length=1, max_length=64)
-    strategy_params: dict = Field(default_factory=dict)
+    strategy_params: dict[str, Any] = Field(default_factory=dict)
     max_turns: int = Field(..., ge=1, le=100)
     max_cost_usd: float = Field(..., ge=0.0, le=500.0)
 
@@ -83,7 +85,7 @@ class CreateFineTuningJobRequest(BaseModel):
     job_type: str = Field(..., pattern=r"^(pull_abliterated|abliterate|sft)$")
     source_model: str = Field(..., min_length=1, max_length=255)
     output_model_name: str = Field(..., min_length=1, max_length=255)
-    config: dict = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 # Abliteration Dataset

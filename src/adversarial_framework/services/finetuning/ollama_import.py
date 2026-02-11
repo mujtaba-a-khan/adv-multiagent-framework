@@ -19,6 +19,7 @@ import subprocess
 import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
+from typing import Any
 
 import httpx
 import structlog
@@ -352,7 +353,7 @@ def _find_orphan_stats(
 # ── Disk management (user-triggered via API) ─────────────────────
 
 
-def get_disk_status() -> dict:
+def get_disk_status() -> dict[str, Any]:
     """Return disk usage summary for the Workshop UI.
 
     Checks both the system disk and Ollama's blob storage for orphans.
@@ -388,7 +389,7 @@ def get_disk_status() -> dict:
     }
 
 
-def cleanup_orphan_blobs() -> dict:
+def cleanup_orphan_blobs() -> dict[str, Any]:
     """Delete Ollama blobs not referenced by any model manifest.
 
     Returns a summary with orphan count and freed bytes.

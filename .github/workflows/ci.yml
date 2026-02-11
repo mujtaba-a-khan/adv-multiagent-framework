@@ -1,4 +1,4 @@
-name: CI
+name: Continuous Integration
 
 on:
   push:
@@ -11,8 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Stage 1 · Quality Checks
+
   lint:
-    name: Lint & Format
+    name: Python Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -53,12 +55,37 @@ jobs:
 
       - name: mypy
         run: uv run mypy src/adversarial_framework/
-        continue-on-error: true  # Strict mode may have issues initially
 
-  test:
-    name: Test (Python ${{ matrix.python-version }})
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+  # Stage 2 · Tests
+
+  test-python:
+    name: Python Tests (${{ matrix.python-version }})
+    needs: [lint, typecheck]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.12", "3.13"]
     steps:
@@ -75,20 +102,54 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: uv run pytest tests/ -v --tb=short --cov=adversarial_framework --cov-report=xml
 
-      - name: Upload coverage
+      - name: Upload Python coverage
         if: matrix.python-version == '3.12'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: coverage-report
+          name: python-coverage
           path: coverage.xml
 
-  build:
-    name: Build Package
+  test-frontend:
+    name: Frontend Tests & Build
+    needs: [frontend-lint]
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:cov
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-coverage
+          path: ui/coverage/lcov.info
+
+  # Stage 3 · Build
+
+  build-package:
+    name: Build Package
+    needs: [test-python]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -109,35 +170,10 @@ jobs:
           name: dist
           path: dist/
 
-  frontend:
-    name: Frontend Build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ui
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: ui/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
-
   docker:
     name: Docker Build
+    needs: [test-python, test-frontend]
     runs-on: ubuntu-latest
-    needs: [test, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -147,3 +183,39 @@ jobs:
 
       - name: Build frontend image
         run: docker build -f ui/Dockerfile -t adversarial-framework-ui:latest ui/
+
+  # Stage 4 · Code Analysis
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: [build-package, test-frontend]
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Python coverage
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-coverage
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-coverage
+          path: ui/coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Quality Gate
+        uses: SonarSource/sonarqube-quality-gate-action@d304d050d930b02a896b0f85935344f023928496 # v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -5,9 +5,13 @@ from __future__ import annotations
 import asyncio
 import uuid
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, HTTPException
+
+if TYPE_CHECKING:
+    from adversarial_framework.db.models import FineTuningJob
 
 from adversarial_framework.api.dependencies import (
     FineTuningRepoDep,
@@ -39,10 +43,10 @@ class _FineTuningJobSnapshot:
     job_type: str
     source_model: str
     output_model_name: str
-    config: dict
+    config: dict[str, Any]
 
     @classmethod
-    def from_orm(cls, job: object) -> _FineTuningJobSnapshot:
+    def from_orm(cls, job: FineTuningJob) -> _FineTuningJobSnapshot:
         return cls(
             id=job.id,
             name=job.name,
@@ -192,7 +196,7 @@ async def cancel_job(
 
 
 @router.get("/disk-status")
-async def disk_status() -> dict:
+async def disk_status() -> dict[str, Any]:
     """Return disk usage summary including orphan blob detection."""
     from adversarial_framework.services.finetuning.ollama_import import (
         get_disk_status,
@@ -202,7 +206,7 @@ async def disk_status() -> dict:
 
 
 @router.post("/cleanup-orphans")
-async def cleanup_orphans() -> dict:
+async def cleanup_orphans() -> dict[str, Any]:
     """Delete orphaned Ollama blobs not referenced by any model."""
     from adversarial_framework.services.finetuning.ollama_import import (
         cleanup_orphan_blobs,
@@ -217,7 +221,7 @@ async def cleanup_orphans() -> dict:
 @router.get("/models")
 async def list_custom_models(
     provider: OllamaProviderDep,
-) -> dict:
+) -> dict[str, Any]:
     """List all models available in Ollama."""
     models = await provider.list_models()
     return {"models": models, "provider": "ollama"}
@@ -234,7 +238,7 @@ async def delete_model(
 ) -> None:
     """Delete a model from Ollama."""
     try:
-        await provider._client.delete("/api/delete", json={"name": model_name})
+        await provider._client.request("DELETE", "/api/delete", json={"name": model_name})
     except Exception as exc:
         raise HTTPException(
             status_code=500,

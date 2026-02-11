@@ -32,7 +32,7 @@ def _build_judge_feedback(
     parts = [f"Verdict: {v_str}", f"Confidence: {confidence}"]
     if judge_reason:
         parts.append(f"Reason: {judge_reason}")
-    return ", ".join(parts), verdict
+    return ", ".join(parts), v_str
 
 
 class AttackerAgent(BaseAgent):
@@ -122,20 +122,18 @@ class AttackerAgent(BaseAgent):
                 judge_feedback, verdict = _build_judge_feedback(state)
 
                 strategy_params["_attack_history"] = attack_history
-                strategy_params["_previous_verdict"] = (
-                    verdict.value if isinstance(verdict, JudgeVerdict) else str(verdict)
-                )
+                strategy_params["_previous_verdict"] = verdict
 
                 logger.info(
                     "attacker_refine",
                     strategy=strategy_name,
                     turn=current_turn,
-                    prev_verdict=(verdict.value if isinstance(verdict, JudgeVerdict) else verdict),
+                    prev_verdict=verdict,
                 )
                 result = await strategy.refine(
                     objective=objective,
-                    previous_prompt=previous_prompt,
-                    target_response=target_response,
+                    previous_prompt=previous_prompt or "",
+                    target_response=target_response or "",
                     judge_feedback=judge_feedback,
                     params=strategy_params,
                 )

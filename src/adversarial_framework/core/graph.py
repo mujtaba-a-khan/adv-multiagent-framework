@@ -151,12 +151,12 @@ def _build_history_recorder() -> Any:
 
         turn = AttackTurn(
             turn_number=turn_number,
-            strategy_name=state.get("selected_strategy", "unknown"),
+            strategy_name=state.get("selected_strategy") or "unknown",
             strategy_params=state.get("strategy_params") or {},
-            attack_prompt=state.get("current_attack_prompt", ""),
-            target_response=state.get("target_response", ""),
-            judge_verdict=verdict,
-            confidence=state.get("judge_confidence", 0.0),
+            attack_prompt=state.get("current_attack_prompt") or "",
+            target_response=state.get("target_response") or "",
+            judge_verdict=verdict or JudgeVerdict.ERROR,
+            confidence=state.get("judge_confidence") or 0.0,
             severity=state.get("severity_score") or 0.0,
             specificity=state.get("specificity_score") or 0.0,
             vulnerability_category=state.get("vulnerability_category"),
@@ -229,7 +229,7 @@ def _find_prompt_patch(actions: list[DefenseAction]) -> str | None:
     """Return the patched prompt from a PROMPT_PATCH action, if any."""
     for action in actions:
         if action.defense_type == DefenseType.PROMPT_PATCH.value:
-            patched = action.defense_config.get("patched_prompt")
+            patched: str | None = action.defense_config.get("patched_prompt")
             if patched:
                 return patched
     return None
@@ -334,7 +334,7 @@ def build_graph(
     session_mode: str = "attack",
     initial_defenses: list[dict[str, Any]] | None = None,
     defense_model: str | None = None,
-) -> StateGraph:
+) -> StateGraph[AdversarialState]:
     """Construct the main adversarial cycle LangGraph.
 
     Args:
